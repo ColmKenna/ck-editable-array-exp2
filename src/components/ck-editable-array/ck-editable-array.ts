@@ -5,6 +5,18 @@ import {
 
 export class CkEditableArray extends HTMLElement {
   private shadow: ShadowRoot;
+  private _data: unknown[] = [];
+  private deepClone<T>(value: T): T {
+    try {
+      // Use JSON cloning as simple deep clone for structured data
+      return JSON.parse(JSON.stringify(value));
+    } catch (e) {
+      // If cloning fails (circular refs), provide a shallow copy fallback
+      if (Array.isArray(value)) return [...(value as unknown[])] as unknown as T;
+      if (typeof value === 'object' && value !== null) return { ...(value as Record<string, unknown>) } as T;
+      return value;
+    }
+  }
 
   constructor() {
     super();
@@ -52,6 +64,21 @@ export class CkEditableArray extends HTMLElement {
 
   set color(value: string) {
     this.setAttribute('color', value);
+  }
+
+  // Data property: deep clone on set, returns a clone on get to maintain immutability
+  get data() {
+    return this.deepClone(this._data);
+  }
+
+  set data(value: unknown[]) {
+    if (!Array.isArray(value)) {
+      this._data = [];
+      return;
+    }
+    this._data = this.deepClone(value);
+    // Re-render as data changed
+    this.render();
   }
 
   private render() {
