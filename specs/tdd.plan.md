@@ -455,11 +455,11 @@ describe('FR-XXX: Feature Name', () => {
 
 Before completing each phase:
 
--- [ ] All phase FRs have passing tests
--- [ ] Coverage meets targets (90% lines, 80% branches)
--- [x] No lint warnings (`npm run lint`)
--- [x] TypeScript compiles (`npm run build`)
--- [x] All existing tests still pass
+- [ ] All phase FRs have passing tests
+- [ ] Coverage meets targets (90% lines, 80% branches)
+- [x] No lint warnings (`npm run lint`)
+- [x] TypeScript compiles (`npm run build`)
+- [x] All existing tests still pass
 - [ ] No TODO comments without issue references
 - [ ] Security tests pass (XSS, input validation)
 - [ ] Accessibility tests pass (ARIA)
