@@ -8,11 +8,26 @@ type RowState = {
   snapshot?: Record<string, unknown>;
 };
 
+// Forbidden property names to prevent prototype pollution
+const FORBIDDEN_PATHS = new Set([
+  '__proto__',
+  'constructor',
+  'prototype',
+  '__defineGetter__',
+  '__defineSetter__',
+  '__lookupGetter__',
+  '__lookupSetter__',
+]);
+
 export class CkEditableArray extends HTMLElement {
   private shadow: ShadowRoot;
   private _data: Record<string, unknown>[] = [];
   private _rowStates: Map<number, RowState> = new Map();
   private _readonly = false;
+  // Cached template references
+  private _displayTemplate: HTMLTemplateElement | null = null;
+  private _editTemplate: HTMLTemplateElement | null = null;
+  private _templatesInitialized = false;
   private deepClone<T>(value: T): T {
     // Use structuredClone when available for broader type support
     try {
@@ -174,9 +189,17 @@ export class CkEditableArray extends HTMLElement {
     this.render();
   }
 
+  // Validate path parts to prevent prototype pollution
+  private isValidPath(parts: string[]): boolean {
+    return !parts.some((part) => FORBIDDEN_PATHS.has(part));
+  }
+
   // Helper to get a nested value from an object using dot notation
   private getNestedValue(obj: Record<string, unknown>, path: string): unknown {
     const parts = path.split('.');
+    // Security: prevent prototype pollution attacks
+    if (!this.isValidPath(parts)) return undefined;
+
     let current: unknown = obj;
     for (const part of parts) {
       if (current === null || current === undefined) return undefined;
@@ -192,6 +215,9 @@ export class CkEditableArray extends HTMLElement {
     value: unknown
   ): void {
     const parts = path.split('.');
+    // Security: prevent prototype pollution attacks
+    if (!this.isValidPath(parts)) return;
+
     let current: Record<string, unknown> = obj;
     for (let i = 0; i < parts.length - 1; i++) {
       const part = parts[i];
@@ -234,6 +260,8 @@ export class CkEditableArray extends HTMLElement {
       snapshot: this.deepClone(row),
     });
     this.render();
+    // Focus first input after entering edit mode
+    this.focusFirstInput(index);
   }
 
   // Save changes to a row
@@ -249,6 +277,8 @@ export class CkEditableArray extends HTMLElement {
       })
     );
     this.render();
+    // Return focus to toggle button after save
+    this.focusToggleButton(index);
   }
 
   // Cancel editing and restore snapshot
@@ -261,6 +291,8 @@ export class CkEditableArray extends HTMLElement {
     }
     this._rowStates.set(index, { editing: false });
     this.render();
+    // Return focus to toggle button after cancel
+    this.focusToggleButton(index);
   }
 
   // Handle action button clicks
@@ -275,10 +307,91 @@ export class CkEditableArray extends HTMLElement {
       case 'cancel':
         this.cancelEdit(index);
         break;
+      default:
+        // Unknown action - silently ignore in production
+        break;
     }
   }
 
+  // Focus the first input in the editing row
+  private focusFirstInput(index: number): void {
+    const row = this.shadow.querySelector(`[data-row-index="${index}"]`);
+    if (!row) return;
+
+    const firstInput = row.querySelector(
+      'input, textarea, select'
+    ) as HTMLElement | null;
+    if (firstInput) {
+      firstInput.focus();
+    }
+  }
+
+  // Focus the toggle button for a row
+  private focusToggleButton(index: number): void {
+    const row = this.shadow.querySelector(`[data-row-index="${index}"]`);
+    if (!row) return;
+
+    const toggleBtn = row.querySelector(
+      '[data-action="toggle"]'
+    ) as HTMLElement | null;
+    if (toggleBtn) {
+      toggleBtn.focus();
+    }
+  }
+
+  // Cache templates from light DOM (call once on first render)
+  private initTemplates(): void {
+    if (this._templatesInitialized) return;
+    this._displayTemplate = this.querySelector(
+      'template[data-slot="display"]'
+    ) as HTMLTemplateElement | null;
+    this._editTemplate = this.querySelector(
+      'template[data-slot="edit"]'
+    ) as HTMLTemplateElement | null;
+    this._templatesInitialized = true;
+  }
+
+  // Event delegation handler for wrapper
+  private handleWrapperClick = (e: Event): void => {
+    const target = e.target as HTMLElement;
+    const actionBtn = target.closest('[data-action]') as HTMLElement | null;
+    if (!actionBtn) return;
+
+    const action = actionBtn.getAttribute('data-action');
+    const row = actionBtn.closest('[data-row-index]') as HTMLElement | null;
+    if (!action || !row) return;
+
+    const index = parseInt(row.getAttribute('data-row-index') || '-1', 10);
+    if (index >= 0) {
+      this.handleAction(action, index);
+    }
+  };
+
+  // Event delegation handler for input changes
+  private handleWrapperInput = (e: Event): void => {
+    const target = e.target as HTMLElement;
+    if (
+      !(target instanceof HTMLInputElement) &&
+      !(target instanceof HTMLTextAreaElement) &&
+      !(target instanceof HTMLSelectElement)
+    ) {
+      return;
+    }
+
+    const path = target.getAttribute('data-bind');
+    const row = target.closest('[data-row-index]') as HTMLElement | null;
+    if (!path || !row) return;
+
+    const index = parseInt(row.getAttribute('data-row-index') || '-1', 10);
+    if (index >= 0 && this._data[index]) {
+      this.setNestedValue(this._data[index], path, target.value);
+    }
+  };
+
   private render() {
+    // Guard: don't render if not connected to DOM
+    if (!this.isConnected) return;
+
     // Ensure fallback style exists without being wiped by later DOM updates
     if (
       !ckEditableArraySheet &&
@@ -297,6 +410,12 @@ export class CkEditableArray extends HTMLElement {
     if (!wrapper) {
       wrapper = document.createElement('div');
       wrapper.className = 'ck-editable-array';
+      // Add ARIA role for list semantics
+      wrapper.setAttribute('role', 'list');
+      wrapper.setAttribute('aria-label', 'Editable items');
+      // Event delegation - single listeners on wrapper
+      wrapper.addEventListener('click', this.handleWrapperClick);
+      wrapper.addEventListener('input', this.handleWrapperInput);
       this.shadow.appendChild(wrapper);
     }
 
@@ -307,16 +426,11 @@ export class CkEditableArray extends HTMLElement {
     // Clear wrapper content but leave other nodes (like style) intact
     wrapper.innerHTML = '';
 
-    // Get templates from light DOM
-    const displayTemplate = this.querySelector(
-      'template[data-slot="display"]'
-    ) as HTMLTemplateElement | null;
-    const editTemplate = this.querySelector(
-      'template[data-slot="edit"]'
-    ) as HTMLTemplateElement | null;
+    // Cache templates on first render
+    this.initTemplates();
 
     // If no templates, render default message
-    if (!displayTemplate) {
+    if (!this._displayTemplate) {
       const heading = document.createElement('h1');
       heading.className = 'ck-editable-array__message';
       heading.textContent = `Hello, ${this.name}!`;
@@ -337,14 +451,20 @@ export class CkEditableArray extends HTMLElement {
       const state = this._rowStates.get(index);
       const isEditing = state?.editing ?? false;
 
-      // Create row container
+      // Create row container with ARIA listitem role
       const rowEl = document.createElement('div');
       rowEl.setAttribute('data-row-index', String(index));
+      rowEl.setAttribute('role', 'listitem');
+      rowEl.setAttribute('aria-label', `Item ${index + 1}`);
       rowEl.className = 'ck-editable-array__row';
 
       // Determine which template to use
       const templateToUse =
-        isEditing && editTemplate ? editTemplate : displayTemplate;
+        isEditing && this._editTemplate
+          ? this._editTemplate
+          : this._displayTemplate;
+      // Skip if no template (should not happen at this point, but guard for TypeScript)
+      if (!templateToUse) return;
       const clone = templateToUse.content.cloneNode(true) as DocumentFragment;
 
       // Bind data to elements with data-bind attribute
@@ -354,6 +474,11 @@ export class CkEditableArray extends HTMLElement {
         if (!path) return;
 
         const value = this.getNestedValue(rowData, path);
+        // Get label from data-label attribute or derive from path
+        const label =
+          el.getAttribute('data-label') ||
+          path.split('.').pop() ||
+          path;
 
         if (el instanceof HTMLInputElement) {
           // For inputs, set value and generate name/id attributes
@@ -361,16 +486,15 @@ export class CkEditableArray extends HTMLElement {
           el.name = `${componentName}[${index}].${path}`;
           el.id = `${componentName}_${index}_${path.replace(/\./g, '_')}`;
 
+          // Add aria-label for accessibility if no explicit label
+          if (!el.getAttribute('aria-label') && !el.labels?.length) {
+            el.setAttribute('aria-label', label);
+          }
+
           // Set readOnly if component is readonly
           if (this._readonly) {
             el.readOnly = true;
           }
-
-          // Add input listener to update data
-          el.addEventListener('input', (e) => {
-            const target = e.target as HTMLInputElement;
-            this.setNestedValue(this._data[index], path, target.value);
-          });
         } else if (
           el instanceof HTMLTextAreaElement ||
           el instanceof HTMLSelectElement
@@ -380,48 +504,67 @@ export class CkEditableArray extends HTMLElement {
           el.name = `${componentName}[${index}].${path}`;
           el.id = `${componentName}_${index}_${path.replace(/\./g, '_')}`;
 
+          // Add aria-label for accessibility if no explicit label
+          if (!el.getAttribute('aria-label')) {
+            el.setAttribute('aria-label', label);
+          }
+
           if (el instanceof HTMLTextAreaElement && this._readonly) {
             el.readOnly = true;
           }
           if (el instanceof HTMLSelectElement && this._readonly) {
             el.disabled = true;
           }
-
-          el.addEventListener('input', (e) => {
-            const target = e.target as HTMLTextAreaElement | HTMLSelectElement;
-            this.setNestedValue(this._data[index], path, target.value);
-          });
         } else {
           // For display elements, set text content
           el.textContent = this.formatValue(value);
         }
       });
 
-      // Bind action buttons
+      // Add ARIA labels to action buttons
       const actionButtons = clone.querySelectorAll('[data-action]');
       actionButtons.forEach((btn) => {
         const action = btn.getAttribute('data-action');
         if (!action) return;
 
-        btn.addEventListener('click', () => {
-          this.handleAction(action, index);
-        });
+        // Add descriptive aria-label if not already present
+        if (!btn.getAttribute('aria-label')) {
+          const actionLabel = this.getActionLabel(action, index);
+          btn.setAttribute('aria-label', actionLabel);
+        }
       });
 
       // Add toggle button if in display mode and no explicit toggle
       if (!isEditing && !clone.querySelector('[data-action="toggle"]')) {
         const toggleBtn = document.createElement('button');
         toggleBtn.setAttribute('data-action', 'toggle');
+        toggleBtn.setAttribute('aria-label', `Edit item ${index + 1}`);
         toggleBtn.textContent = 'Edit';
-        toggleBtn.addEventListener('click', () => {
-          this.handleAction('toggle', index);
-        });
         rowEl.appendChild(toggleBtn);
       }
 
       rowEl.appendChild(clone);
       wrapper!.appendChild(rowEl);
     });
+  }
+
+  // Get accessible label for action buttons
+  private getActionLabel(action: string, index: number): string {
+    const itemNum = index + 1;
+    switch (action) {
+      case 'toggle':
+        return `Edit item ${itemNum}`;
+      case 'save':
+        return `Save item ${itemNum}`;
+      case 'cancel':
+        return `Cancel editing item ${itemNum}`;
+      case 'delete':
+        return `Delete item ${itemNum}`;
+      case 'restore':
+        return `Restore item ${itemNum}`;
+      default:
+        return `${action} item ${itemNum}`;
+    }
   }
 
   private getSanitizedColor(value: string) {
