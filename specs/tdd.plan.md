@@ -85,14 +85,14 @@ tests/
 | [x] | TC-001-02 | FR-001 | Getting data returns clean array without markers | core-data.test.ts |
 | [x] | TC-001-03 | FR-001 | Setting data dispatches datachanged event | core-data.test.ts |
 | [x] | TC-001-04 | FR-001 | Non-array data results in empty array | core-data.test.ts |
-| [ ] | TC-008-01 | FR-008 | data-bind sets text content from field | data-binding.test.ts |
-| [ ] | TC-008-02 | FR-008 | Nested paths work (person.address.city) | data-binding.test.ts |
-| [ ] | TC-008-03 | FR-008 | Array values joined with comma separator | data-binding.test.ts |
-| [ ] | TC-009-01 | FR-009 | Input value populated from data | data-binding.test.ts |
-| [ ] | TC-009-02 | FR-009 | Input changes update row data | data-binding.test.ts |
-| [ ] | TC-009a-01 | FR-009a | Input name attribute generated correctly | data-binding.test.ts |
-| [ ] | TC-009a-02 | FR-009a | Input id attribute generated correctly | data-binding.test.ts |
-| [ ] | TC-009a-03 | FR-009a | Nested paths generate correct name/id | data-binding.test.ts |
+| [x] | TC-008-01 | FR-008 | data-bind sets text content from field | data-binding.test.ts |
+| [x] | TC-008-02 | FR-008 | Nested paths work (person.address.city) | data-binding.test.ts |
+| [x] | TC-008-03 | FR-008 | Array values joined with comma separator | data-binding.test.ts |
+| [x] | TC-009-01 | FR-009 | Input value populated from data | data-binding.test.ts |
+| [x] | TC-009-02 | FR-009 | Input changes update row data | data-binding.test.ts |
+| [x] | TC-009a-01 | FR-009a | Input name attribute generated correctly | data-binding.test.ts |
+| [x] | TC-009a-02 | FR-009a | Input id attribute generated correctly | data-binding.test.ts |
+| [x] | TC-009a-03 | FR-009a | Nested paths generate correct name/id | data-binding.test.ts |
 | [ ] | TC-028-01 | FR-028 | readonly attribute blocks all modifications | readonly.test.ts |
 | [ ] | TC-028-02 | FR-028 | Inputs have readOnly property set | readonly.test.ts |
 

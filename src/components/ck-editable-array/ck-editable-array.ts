@@ -3,9 +3,16 @@ import {
   ckEditableArrayCSS,
 } from './ck-editable-array.styles';
 
+type RowState = {
+  editing: boolean;
+  snapshot?: Record<string, unknown>;
+};
+
 export class CkEditableArray extends HTMLElement {
   private shadow: ShadowRoot;
-  private _data: unknown[] = [];
+  private _data: Record<string, unknown>[] = [];
+  private _rowStates: Map<number, RowState> = new Map();
+  private _readonly = false;
   private deepClone<T>(value: T): T {
     // Use structuredClone when available for broader type support
     try {
@@ -93,11 +100,32 @@ export class CkEditableArray extends HTMLElement {
   }
 
   static get observedAttributes() {
-    return ['name', 'color'];
+    return ['name', 'color', 'readonly'];
   }
 
-  attributeChangedCallback(name: string, oldValue: string, newValue: string) {
+  get readonly(): boolean {
+    return this._readonly;
+  }
+
+  set readonly(value: boolean) {
+    this._readonly = value;
+    if (value) {
+      this.setAttribute('readonly', '');
+    } else {
+      this.removeAttribute('readonly');
+    }
+    this.render();
+  }
+
+  attributeChangedCallback(
+    attrName: string,
+    oldValue: string,
+    newValue: string
+  ) {
     if (oldValue !== newValue) {
+      if (attrName === 'readonly') {
+        this._readonly = newValue !== null;
+      }
       this.render();
     }
   }
@@ -119,7 +147,7 @@ export class CkEditableArray extends HTMLElement {
   }
 
   // Data property: deep clone on set, returns a clone on get to maintain immutability
-  get data() {
+  get data(): Record<string, unknown>[] {
     return this.deepClone(this._data);
   }
 
@@ -134,7 +162,7 @@ export class CkEditableArray extends HTMLElement {
       );
       return;
     }
-    this._data = this.deepClone(value);
+    this._data = this.deepClone(value) as Record<string, unknown>[];
     // Dispatch datachanged event with cloned data
     this.dispatchEvent(
       new CustomEvent('datachanged', {
@@ -144,6 +172,110 @@ export class CkEditableArray extends HTMLElement {
     );
     // Re-render as data changed
     this.render();
+  }
+
+  // Helper to get a nested value from an object using dot notation
+  private getNestedValue(obj: Record<string, unknown>, path: string): unknown {
+    const parts = path.split('.');
+    let current: unknown = obj;
+    for (const part of parts) {
+      if (current === null || current === undefined) return undefined;
+      current = (current as Record<string, unknown>)[part];
+    }
+    return current;
+  }
+
+  // Helper to set a nested value on an object using dot notation
+  private setNestedValue(
+    obj: Record<string, unknown>,
+    path: string,
+    value: unknown
+  ): void {
+    const parts = path.split('.');
+    let current: Record<string, unknown> = obj;
+    for (let i = 0; i < parts.length - 1; i++) {
+      const part = parts[i];
+      if (!(part in current) || typeof current[part] !== 'object') {
+        current[part] = {};
+      }
+      current = current[part] as Record<string, unknown>;
+    }
+    current[parts[parts.length - 1]] = value;
+  }
+
+  // Format a value for display
+  private formatValue(value: unknown): string {
+    if (value === null || value === undefined) return '';
+    if (Array.isArray(value)) return value.join(', ');
+    return String(value);
+  }
+
+  // Get the currently editing row index (-1 if none)
+  private getEditingRowIndex(): number {
+    for (const [index, state] of this._rowStates) {
+      if (state.editing) return index;
+    }
+    return -1;
+  }
+
+  // Enter edit mode for a row
+  private enterEditMode(index: number): void {
+    if (this._readonly) return;
+
+    // Only one row can be in edit mode at a time
+    const currentEditing = this.getEditingRowIndex();
+    if (currentEditing !== -1 && currentEditing !== index) return;
+
+    const row = this._data[index];
+    if (!row) return;
+
+    this._rowStates.set(index, {
+      editing: true,
+      snapshot: this.deepClone(row),
+    });
+    this.render();
+  }
+
+  // Save changes to a row
+  private saveRow(index: number): void {
+    const state = this._rowStates.get(index);
+    if (!state?.editing) return;
+
+    this._rowStates.set(index, { editing: false });
+    this.dispatchEvent(
+      new CustomEvent('datachanged', {
+        bubbles: true,
+        detail: { data: this.deepClone(this._data) },
+      })
+    );
+    this.render();
+  }
+
+  // Cancel editing and restore snapshot
+  private cancelEdit(index: number): void {
+    const state = this._rowStates.get(index);
+    if (!state?.editing) return;
+
+    if (state.snapshot) {
+      this._data[index] = this.deepClone(state.snapshot);
+    }
+    this._rowStates.set(index, { editing: false });
+    this.render();
+  }
+
+  // Handle action button clicks
+  private handleAction(action: string, index: number): void {
+    switch (action) {
+      case 'toggle':
+        this.enterEditMode(index);
+        break;
+      case 'save':
+        this.saveRow(index);
+        break;
+      case 'cancel':
+        this.cancelEdit(index);
+        break;
+    }
   }
 
   private render() {
@@ -175,17 +307,121 @@ export class CkEditableArray extends HTMLElement {
     // Clear wrapper content but leave other nodes (like style) intact
     wrapper.innerHTML = '';
 
-    const heading = document.createElement('h1');
-    heading.className = 'ck-editable-array__message';
-    heading.textContent = `Hello, ${this.name}!`;
-    heading.style.color = sanitizedColor;
+    // Get templates from light DOM
+    const displayTemplate = this.querySelector(
+      'template[data-slot="display"]'
+    ) as HTMLTemplateElement | null;
+    const editTemplate = this.querySelector(
+      'template[data-slot="edit"]'
+    ) as HTMLTemplateElement | null;
 
-    const subtitle = document.createElement('p');
-    subtitle.className = 'ck-editable-array__subtitle';
-    subtitle.textContent = 'Welcome to our Web Component Library';
+    // If no templates, render default message
+    if (!displayTemplate) {
+      const heading = document.createElement('h1');
+      heading.className = 'ck-editable-array__message';
+      heading.textContent = `Hello, ${this.name}!`;
+      heading.style.color = sanitizedColor;
 
-    wrapper.appendChild(heading);
-    wrapper.appendChild(subtitle);
+      const subtitle = document.createElement('p');
+      subtitle.className = 'ck-editable-array__subtitle';
+      subtitle.textContent = 'Welcome to our Web Component Library';
+
+      wrapper.appendChild(heading);
+      wrapper.appendChild(subtitle);
+      return;
+    }
+
+    // Render rows from data
+    const componentName = this.getAttribute('name') || 'items';
+    this._data.forEach((rowData, index) => {
+      const state = this._rowStates.get(index);
+      const isEditing = state?.editing ?? false;
+
+      // Create row container
+      const rowEl = document.createElement('div');
+      rowEl.setAttribute('data-row-index', String(index));
+      rowEl.className = 'ck-editable-array__row';
+
+      // Determine which template to use
+      const templateToUse =
+        isEditing && editTemplate ? editTemplate : displayTemplate;
+      const clone = templateToUse.content.cloneNode(true) as DocumentFragment;
+
+      // Bind data to elements with data-bind attribute
+      const bindElements = clone.querySelectorAll('[data-bind]');
+      bindElements.forEach((el) => {
+        const path = el.getAttribute('data-bind');
+        if (!path) return;
+
+        const value = this.getNestedValue(rowData, path);
+
+        if (el instanceof HTMLInputElement) {
+          // For inputs, set value and generate name/id attributes
+          el.value = this.formatValue(value);
+          el.name = `${componentName}[${index}].${path}`;
+          el.id = `${componentName}_${index}_${path.replace(/\./g, '_')}`;
+
+          // Set readOnly if component is readonly
+          if (this._readonly) {
+            el.readOnly = true;
+          }
+
+          // Add input listener to update data
+          el.addEventListener('input', (e) => {
+            const target = e.target as HTMLInputElement;
+            this.setNestedValue(this._data[index], path, target.value);
+          });
+        } else if (
+          el instanceof HTMLTextAreaElement ||
+          el instanceof HTMLSelectElement
+        ) {
+          // For textareas and selects
+          el.value = this.formatValue(value);
+          el.name = `${componentName}[${index}].${path}`;
+          el.id = `${componentName}_${index}_${path.replace(/\./g, '_')}`;
+
+          if (el instanceof HTMLTextAreaElement && this._readonly) {
+            el.readOnly = true;
+          }
+          if (el instanceof HTMLSelectElement && this._readonly) {
+            el.disabled = true;
+          }
+
+          el.addEventListener('input', (e) => {
+            const target = e.target as HTMLTextAreaElement | HTMLSelectElement;
+            this.setNestedValue(this._data[index], path, target.value);
+          });
+        } else {
+          // For display elements, set text content
+          el.textContent = this.formatValue(value);
+        }
+      });
+
+      // Bind action buttons
+      const actionButtons = clone.querySelectorAll('[data-action]');
+      actionButtons.forEach((btn) => {
+        const action = btn.getAttribute('data-action');
+        if (!action) return;
+
+        btn.addEventListener('click', () => {
+          this.handleAction(action, index);
+        });
+      });
+
+      // Add toggle button if in display mode and no explicit toggle
+      if (!isEditing && !clone.querySelector('[data-action="toggle"]')) {
+        const toggleBtn = document.createElement('button');
+        toggleBtn.setAttribute('data-action', 'toggle');
+        toggleBtn.textContent = 'Edit';
+        toggleBtn.addEventListener('click', () => {
+          this.handleAction('toggle', index);
+        });
+        rowEl.appendChild(toggleBtn);
+      }
+
+      rowEl.appendChild(clone);
+      wrapper!.appendChild(rowEl);
+    });
   }
 
   private getSanitizedColor(value: string) {
