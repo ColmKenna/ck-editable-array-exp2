@@ -93,8 +93,8 @@ tests/
 | [x] | TC-009a-01 | FR-009a | Input name attribute generated correctly | data-binding.test.ts |
 | [x] | TC-009a-02 | FR-009a | Input id attribute generated correctly | data-binding.test.ts |
 | [x] | TC-009a-03 | FR-009a | Nested paths generate correct name/id | data-binding.test.ts |
-| [ ] | TC-028-01 | FR-028 | readonly attribute blocks all modifications | readonly.test.ts |
-| [ ] | TC-028-02 | FR-028 | Inputs have readOnly property set | readonly.test.ts |
+| [x] | TC-028-01 | FR-028 | readonly attribute blocks all modifications | readonly.test.ts |
+| [x] | TC-028-02 | FR-028 | Inputs have readOnly property set | readonly.test.ts |
 
 ### Phase 2: CRUD Operations (Must-have)
 **Priority**: Must-have
