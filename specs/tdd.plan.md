@@ -83,7 +83,7 @@ tests/
 |------|--------------|----|----|------------|
 | [x] | TC-001-01 | FR-001 | Setting data property stores deep clone | core-data.test.ts |
 | [x] | TC-001-02 | FR-001 | Getting data returns clean array without markers | core-data.test.ts |
-| [ ] | TC-001-03 | FR-001 | Setting data dispatches datachanged event | core-data.test.ts |
+| [x] | TC-001-03 | FR-001 | Setting data dispatches datachanged event | core-data.test.ts |
 | [x] | TC-001-04 | FR-001 | Non-array data results in empty array | core-data.test.ts |
 | [ ] | TC-008-01 | FR-008 | data-bind sets text content from field | data-binding.test.ts |
 | [ ] | TC-008-02 | FR-008 | Nested paths work (person.address.city) | data-binding.test.ts |

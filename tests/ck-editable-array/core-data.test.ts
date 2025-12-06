@@ -57,7 +57,21 @@ describe('FR-001: Data Property Getter/Setter - core behavior', () => {
     expect(again[0].nested.age).toBe(40);
   });
 
-  test('TC-001-03: Fallback style node remains after render (render should not remove earlier appended style)', () => {
+  test('TC-001-03: Setting data dispatches datachanged event', () => {
+    const handler = jest.fn();
+    element.addEventListener('datachanged', handler);
+
+    (element as unknown as { data: Person[] }).data = [
+      { name: 'Test', nested: { age: 25 } },
+    ];
+
+    expect(handler).toHaveBeenCalledTimes(1);
+    const event = handler.mock.calls[0][0] as CustomEvent<{ data: Person[] }>;
+    expect(event.type).toBe('datachanged');
+    expect(event.detail.data).toEqual([{ name: 'Test', nested: { age: 25 } }]);
+  });
+
+  test('TC-001-03b: Fallback style node remains after render (render should not remove earlier appended style)', () => {
     // Ensure style is present after multiple renders and not removed
     element.connectedCallback();
     const fallbackStyleBefore = element.shadowRoot?.querySelectorAll(

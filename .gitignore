@@ -63,3 +63,4 @@ jspm_packages/
 
 # npm configuration (may contain tokens)
 .npmrc.local
+.claude/settings.local.json
