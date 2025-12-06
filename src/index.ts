@@ -1,5 +1,5 @@
 // Export all components
-export { HelloWorld } from './components/hello-world/hello.world';
+export { CkEditableArray } from './components/ck-editable-array/ck-editable-array';
 
 // Auto-register all components
-import './components/hello-world/hello.world';
+import './components/ck-editable-array/ck-editable-array';

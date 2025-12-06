@@ -6,18 +6,18 @@ export default {
   input: 'src/index.ts',
   output: [
     {
-      file: 'dist/hello-world/hello-world.js',
+      file: 'dist/ck-editable-array/ck-editable-array.js',
       format: 'umd',
       name: 'WebComponentLibrary',
       sourcemap: true
     },
     {
-      file: 'dist/hello-world/hello-world.esm.js',
+      file: 'dist/ck-editable-array/ck-editable-array.esm.js',
       format: 'es',
       sourcemap: true
     },
     {
-      file: 'dist/hello-world/hello-world.min.js',
+      file: 'dist/ck-editable-array/ck-editable-array.min.js',
       format: 'umd',
       name: 'WebComponentLibrary',
       plugins: [terser()],

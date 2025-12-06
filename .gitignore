@@ -5,11 +5,7 @@ yarn-debug.log*
 yarn-error.log*
 
 # Build outputs
-dist/*.js
-dist/*.js.map
-dist/*.d.ts
-# Keep the demo HTML file
-!dist/index.html
+/dist/
 
 # OS generated files
 .DS_Store

@@ -6,8 +6,8 @@
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"
   },
-  "main": "dist/hello-world/hello-world.js",
-  "module": "dist/hello-world/hello-world.esm.js",
+  "main": "dist/ck-editable-array/ck-editable-array.js",
+  "module": "dist/ck-editable-array/ck-editable-array.esm.js",
   "types": "dist/index.d.ts",
   "files": [
     "dist"

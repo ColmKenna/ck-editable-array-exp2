@@ -30,7 +30,7 @@ npm install @colmkenna/ck-webcomponents
 ### Via CDN (if published to a CDN)
 
 ```html
-<script src="https://unpkg.com/@colmkenna/ck-webcomponents@latest/dist/hello-world/hello-world.min.js"></script>
+<script src="https://unpkg.com/@colmkenna/ck-webcomponents@latest/dist/ck-editable-array/ck-editable-array.min.js"></script>
 ```
 
 Then import in your JavaScript:
@@ -42,24 +42,24 @@ import '@colmkenna/ck-webcomponents';
 Or import specific components:
 
 ```javascript
-import { HelloWorld } from '@colmkenna/ck-webcomponents';
+import { CkEditableArray } from '@colmkenna/ck-webcomponents';
 ```
 
 ## 🧩 Components
 
-### HelloWorld Component
+### CkEditableArray Component
 
 A simple greeting component with customizable name and color.
 
 ```html
 <!-- Basic usage -->
-<hello-world></hello-world>
+<ck-editable-array></ck-editable-array>
 
 <!-- With custom name -->
-<hello-world name="Developer"></hello-world>
+<ck-editable-array name="Developer"></ck-editable-array>
 
 <!-- With custom name and color -->
-<hello-world name="Developer" color="#ff6b6b"></hello-world>
+<ck-editable-array name="Developer" color="#ff6b6b"></ck-editable-array>
 ```
 
 #### Attributes
@@ -74,9 +74,9 @@ A simple greeting component with customizable name and color.
 The component also supports JavaScript property access:
 
 ```javascript
-const helloWorld = document.querySelector('hello-world');
-helloWorld.name = 'New Name';
-helloWorld.color = '#blue';
+const ckEditableArray = document.querySelector('ck-editable-array');
+ckEditableArray.name = 'New Name';
+ckEditableArray.color = '#blue';
 ```
 
 ## 🛠️ Development
@@ -122,15 +122,15 @@ npm run serve
 webcomponent-library/
 ├── src/
 │   ├── components/
-│   │   └── hello-world/
-│   │       └── hello.world.ts
+│   │   └── ck-editable-array/
+│   │       └── ck-editable-array.ts
 │   └── index.ts
 ├── dist/
 │   ├── index.html (demo page)
-│   ├── hello-world/
-│   │   ├── hello-world.js (UMD build)
-│   │   ├── hello-world.esm.js (ES module build)
-│   │   └── hello-world.min.js (minified UMD build)
+│   ├── ck-editable-array/
+│   │   ├── ck-editable-array.js (UMD build)
+│   │   ├── ck-editable-array.esm.js (ES module build)
+│   │   └── ck-editable-array.min.js (minified UMD build)
 │   └── index.d.ts (TypeScript definitions)
 ├── package.json
 ├── rollup.config.js
@@ -197,11 +197,6 @@ This project includes comprehensive testing, linting, and formatting setup.
 
 ### Testing
 
-Tests are written using Jest with jsdom environment for DOM testing. Test files are located in `__tests__` directories next to the components they test.
-
-```bash
-# Run all tests
-npm test
 
 # Run tests with coverage
 npm run test:coverage
@@ -276,8 +271,6 @@ npm run build
 2. Make sure you're authenticated with GitHub Packages:
 ```bash
 npm login --scope=@colmkenna --registry=https://npm.pkg.github.com
-```
-
 3. Publish:
 ```bash
 npm publish
@@ -296,7 +289,7 @@ After installing, you can use the components in your HTML:
     </script>
 </head>
 <body>
-    <hello-world name="GitHub Packages"></hello-world>
+    <ck-editable-array name="GitHub Packages"></ck-editable-array>
 </body>
 </html>
 ```
@@ -304,10 +297,6 @@ After installing, you can use the components in your HTML:
 ## 📄 License
 
 MIT License - see LICENSE file for details.
-
-## 🤝 Contributing
-
-1. Fork the repository
 2. Create a feature branch
 3. Make your changes
 4. Add tests if applicable
