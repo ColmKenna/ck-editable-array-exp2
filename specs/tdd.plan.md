@@ -243,15 +243,15 @@ tests/
 
 | Done | Test Case ID | FR | Description | Test File |
 |------|--------------|----|----|------------|
-| [ ] | TC-026-01 | FR-026 | modalEdit=true renders edit in modal | modal-edit.test.ts |
-| [ ] | TC-026-02 | FR-026 | modal-edit attribute enables modal | modal-edit.test.ts |
-| [ ] | TC-026-03 | FR-026 | Modal overlay shown (ck-hidden removed) | modal-edit.test.ts |
-| [ ] | TC-026-04 | FR-026 | aria-hidden="false" on modal | modal-edit.test.ts |
-| [ ] | TC-026-05 | FR-026 | Focus trapped in modal | modal-edit.test.ts |
-| [ ] | TC-027-01 | FR-027 | Save closes modal | modal-edit.test.ts |
-| [ ] | TC-027-02 | FR-027 | Cancel closes modal | modal-edit.test.ts |
-| [ ] | TC-027-03 | FR-027 | aria-hidden="true" when closed | modal-edit.test.ts |
-| [ ] | TC-027-04 | FR-027 | Focus returns to toggle button | modal-edit.test.ts |
+| [x] | TC-026-01 | FR-026 | modalEdit=true renders edit in modal | modal-edit.test.ts |
+| [x] | TC-026-02 | FR-026 | modal-edit attribute enables modal | modal-edit.test.ts |
+| [x] | TC-026-03 | FR-026 | Modal overlay shown (ck-hidden removed) | modal-edit.test.ts |
+| [x] | TC-026-04 | FR-026 | aria-hidden="false" on modal | modal-edit.test.ts |
+| [x] | TC-026-05 | FR-026 | Focus trapped in modal | modal-edit.test.ts |
+| [x] | TC-027-01 | FR-027 | Save closes modal | modal-edit.test.ts |
+| [x] | TC-027-02 | FR-027 | Cancel closes modal | modal-edit.test.ts |
+| [x] | TC-027-03 | FR-027 | aria-hidden="true" when closed | modal-edit.test.ts |
+| [x] | TC-027-04 | FR-027 | Focus returns to toggle button | modal-edit.test.ts |
 
 ### Phase 9: i18n Support (Should-have)
 **Priority**: Should-have

@@ -24,6 +24,9 @@ export class CkEditableArray extends HTMLElement {
   private _data: Record<string, unknown>[] = [];
   private _rowStates: Map<number, RowState> = new Map();
   private _readonly = false;
+  private _modalEdit = false;
+  private _modalEditingIndex = -1;
+  private _lastFocusedToggleButton: HTMLElement | null = null;
   // Cached template references
   private _displayTemplate: HTMLTemplateElement | null = null;
   private _editTemplate: HTMLTemplateElement | null = null;
@@ -167,7 +170,7 @@ export class CkEditableArray extends HTMLElement {
   }
 
   static get observedAttributes() {
-    return ['name', 'color', 'readonly'];
+    return ['name', 'color', 'readonly', 'modal-edit'];
   }
 
   get readonly(): boolean {
@@ -184,6 +187,20 @@ export class CkEditableArray extends HTMLElement {
     this.render();
   }
 
+  get modalEdit(): boolean {
+    return this._modalEdit;
+  }
+
+  set modalEdit(value: boolean) {
+    this._modalEdit = value;
+    if (value) {
+      this.setAttribute('modal-edit', '');
+    } else {
+      this.removeAttribute('modal-edit');
+    }
+    this.render();
+  }
+
   attributeChangedCallback(
     attrName: string,
     oldValue: string,
@@ -192,6 +209,9 @@ export class CkEditableArray extends HTMLElement {
     if (oldValue !== newValue) {
       if (attrName === 'readonly') {
         this._readonly = newValue !== null;
+      }
+      if (attrName === 'modal-edit') {
+        this._modalEdit = newValue !== null;
       }
       this.render();
     }
@@ -534,6 +554,15 @@ export class CkEditableArray extends HTMLElement {
     // If event was canceled, don't enter edit mode
     if (beforeEvent.defaultPrevented) return;
 
+    // Store the toggle button reference for modal mode
+    if (this._modalEdit) {
+      const rowEl = this.shadow.querySelector(`[data-row-index="${index}"]`);
+      this._lastFocusedToggleButton = rowEl?.querySelector(
+        '[data-action="toggle"]'
+      ) as HTMLElement | null;
+      this._modalEditingIndex = index;
+    }
+
     this._rowStates.set(index, {
       editing: true,
       snapshot: this.deepClone(row),
@@ -571,6 +600,12 @@ export class CkEditableArray extends HTMLElement {
     }
 
     this._rowStates.set(index, { editing: false });
+
+    // Close modal if in modal mode
+    if (this._modalEdit) {
+      this._modalEditingIndex = -1;
+    }
+
     this.dispatchEvent(
       new CustomEvent('datachanged', {
         bubbles: true,
@@ -579,7 +614,10 @@ export class CkEditableArray extends HTMLElement {
     );
     this.render();
     // Return focus to toggle button after save
-    this.focusToggleButton(index);
+    // Use a microtask to ensure DOM has updated
+    queueMicrotask(() => {
+      this.focusToggleButton(index);
+    });
   }
 
   // Cancel editing and restore snapshot
@@ -615,11 +653,19 @@ export class CkEditableArray extends HTMLElement {
       this._rowStates.set(index, { editing: false });
     }
 
+    // Close modal if in modal mode
+    if (this._modalEdit) {
+      this._modalEditingIndex = -1;
+    }
+
     this.render();
 
     // Return focus to toggle button after cancel (if row still exists)
     if (!isNewRow) {
-      this.focusToggleButton(index);
+      // Use a microtask to ensure DOM has updated
+      queueMicrotask(() => {
+        this.focusToggleButton(index);
+      });
     }
 
     // Dispatch aftertogglemode event
@@ -674,6 +720,21 @@ export class CkEditableArray extends HTMLElement {
 
   // Focus the first input in the editing row
   private focusFirstInput(index: number): void {
+    // In modal mode, focus input in modal
+    if (this._modalEdit) {
+      const modal = this.shadow.querySelector('.ck-modal');
+      if (!modal) return;
+
+      const firstInput = modal.querySelector(
+        'input, textarea, select'
+      ) as HTMLElement | null;
+      if (firstInput) {
+        firstInput.focus();
+      }
+      return;
+    }
+
+    // In inline mode, focus input in row
     const row = this.shadow.querySelector(`[data-row-index="${index}"]`);
     if (!row) return;
 
@@ -796,6 +857,30 @@ export class CkEditableArray extends HTMLElement {
     // Clear wrapper content but leave other nodes (like style) intact
     wrapper.innerHTML = '';
 
+    // Create or get modal element if in modal mode
+    let modal: HTMLElement | null = null;
+    if (this._modalEdit) {
+      modal = this.shadow.querySelector('.ck-modal') as HTMLElement | null;
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.className = 'ck-modal ck-hidden';
+        modal.setAttribute('role', 'dialog');
+        modal.setAttribute('aria-modal', 'true');
+        modal.setAttribute('aria-hidden', 'true');
+
+        // Create modal content wrapper
+        const modalContent = document.createElement('div');
+        modalContent.className = 'ck-modal__content';
+        modal.appendChild(modalContent);
+
+        // Add event listeners to modal
+        modal.addEventListener('click', this.handleWrapperClick);
+        modal.addEventListener('input', this.handleWrapperInput);
+
+        this.shadow.appendChild(modal);
+      }
+    }
+
     // Cache templates on first render
     this.initTemplates();
 
@@ -835,8 +920,9 @@ export class CkEditableArray extends HTMLElement {
       }
 
       // Determine which template to use
+      // In modal mode, always use display template for inline row
       const templateToUse =
-        isEditing && this._editTemplate
+        isEditing && this._editTemplate && !this._modalEdit
           ? this._editTemplate
           : this._displayTemplate;
       // Skip if no template (should not happen at this point, but guard for TypeScript)
@@ -934,6 +1020,104 @@ export class CkEditableArray extends HTMLElement {
 
       wrapper!.appendChild(rowEl);
     });
+
+    // Handle modal rendering if in modal edit mode
+    if (this._modalEdit && modal) {
+      const editingIndex = this.getEditingRowIndex();
+      const modalContent = modal.querySelector('.ck-modal__content');
+
+      if (editingIndex !== -1 && modalContent && this._editTemplate) {
+        // Clear modal content
+        modalContent.innerHTML = '';
+
+        // Get row data
+        const rowData = this._data[editingIndex];
+
+        // Clone edit template
+        const clone = this._editTemplate.content.cloneNode(
+          true
+        ) as DocumentFragment;
+
+        // Create row wrapper for modal with data-row-index
+        const modalRowEl = document.createElement('div');
+        modalRowEl.setAttribute('data-row-index', String(editingIndex));
+        modalRowEl.className = 'ck-modal__row';
+
+        // Bind data to elements with data-bind attribute
+        const bindElements = clone.querySelectorAll('[data-bind]');
+        bindElements.forEach(el => {
+          const path = el.getAttribute('data-bind');
+          if (!path) return;
+
+          const value = this.getNestedValue(rowData, path);
+          const label =
+            el.getAttribute('data-label') || path.split('.').pop() || path;
+
+          if (el instanceof HTMLInputElement) {
+            el.value = this.formatValue(value);
+            el.name = `${componentName}[${editingIndex}].${path}`;
+            el.id = `${componentName}_${editingIndex}_${path.replace(/\./g, '_')}`;
+
+            if (!el.getAttribute('aria-label') && !el.labels?.length) {
+              el.setAttribute('aria-label', label);
+            }
+
+            if (this._readonly) {
+              el.readOnly = true;
+            }
+          } else if (
+            el instanceof HTMLTextAreaElement ||
+            el instanceof HTMLSelectElement
+          ) {
+            el.value = this.formatValue(value);
+            el.name = `${componentName}[${editingIndex}].${path}`;
+            el.id = `${componentName}_${editingIndex}_${path.replace(/\./g, '_')}`;
+
+            if (!el.getAttribute('aria-label')) {
+              el.setAttribute('aria-label', label);
+            }
+
+            if (el instanceof HTMLTextAreaElement && this._readonly) {
+              el.readOnly = true;
+            }
+            if (el instanceof HTMLSelectElement && this._readonly) {
+              el.disabled = true;
+            }
+          } else {
+            el.textContent = this.formatValue(value);
+          }
+        });
+
+        // Add ARIA labels to action buttons
+        const actionButtons = clone.querySelectorAll('[data-action]');
+        actionButtons.forEach(btn => {
+          const action = btn.getAttribute('data-action');
+          if (!action) return;
+
+          if (!btn.getAttribute('aria-label')) {
+            const actionLabel = this.getActionLabel(action, editingIndex);
+            btn.setAttribute('aria-label', actionLabel);
+          }
+        });
+
+        modalRowEl.appendChild(clone);
+
+        // Apply validation if needed
+        if (Object.keys(this._validationSchema).length > 0) {
+          this.updateRowValidation(modalRowEl, editingIndex);
+        }
+
+        modalContent.appendChild(modalRowEl);
+
+        // Show modal
+        modal.classList.remove('ck-hidden');
+        modal.setAttribute('aria-hidden', 'false');
+      } else {
+        // Hide modal if no row is being edited
+        modal.classList.add('ck-hidden');
+        modal.setAttribute('aria-hidden', 'true');
+      }
+    }
   }
 
   // Get accessible label for action buttons

@@ -329,7 +329,7 @@ describe('FR-004: Save Row', () => {
     expect(event.detail.data[0].name).toBe('Bob');
   });
 
-  test('TC-004-04: Focus returns to toggle button', () => {
+  test('TC-004-04: Focus returns to toggle button', async () => {
     document.body.appendChild(element);
 
     type RowData = { name: string };
@@ -346,6 +346,9 @@ describe('FR-004: Save Row', () => {
       '[data-action="save"]'
     ) as HTMLElement;
     saveBtn?.click();
+
+    // Wait for microtask to complete (focus restoration is async)
+    await new Promise(resolve => setTimeout(resolve, 0));
 
     // Focus should be on toggle button
     const newToggleBtn = element.shadowRoot?.querySelector(

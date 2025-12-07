@@ -32,6 +32,45 @@ export const ckEditableArrayCSS = `
   margin: 0.5rem 0 0 0;
   opacity: 0.8;
 }
+
+/* Modal styles */
+.ck-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.ck-modal.ck-hidden {
+  display: none;
+}
+
+.ck-modal__content {
+  background: white;
+  color: black;
+  padding: 2rem;
+  border-radius: 8px;
+  max-width: 90%;
+  max-height: 90%;
+  overflow: auto;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+.ck-modal__row {
+  /* Add any specific modal row styles */
+}
+
+/* Soft deleted rows */
+.ck-deleted {
+  opacity: 0.5;
+  text-decoration: line-through;
+}
 `;
 
 // Try to create a constructable stylesheet where supported. Fall back to null.
