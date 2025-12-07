@@ -25,7 +25,7 @@ export class CkEditableArray extends HTMLElement {
   private _rowStates: Map<number, RowState> = new Map();
   private _readonly = false;
   private _modalEdit = false;
-  private _modalEditingIndex = -1;
+  private _editingRowIndex = -1;
   private _lastFocusedToggleButton: HTMLElement | null = null;
   private _modalElement: HTMLElement | null = null;
   // Cached template references
@@ -174,7 +174,7 @@ export class CkEditableArray extends HTMLElement {
       this._modalElement.remove();
       this._modalElement = null;
     }
-    this._modalEditingIndex = -1;
+    this._editingRowIndex = -1;
     this._lastFocusedToggleButton = null;
   }
 
@@ -319,10 +319,7 @@ export class CkEditableArray extends HTMLElement {
 
   // Get the currently editing row index (-1 if none)
   private getEditingRowIndex(): number {
-    for (const [index, state] of this._rowStates) {
-      if (state.editing) return index;
-    }
-    return -1;
+    return this._editingRowIndex;
   }
 
   // FR-002: Add a new row
@@ -347,6 +344,7 @@ export class CkEditableArray extends HTMLElement {
       editing: true,
       snapshot: this.deepClone(newItem),
     });
+    this._editingRowIndex = newIndex;
 
     // Dispatch datachanged event
     this.dispatchEvent(
@@ -569,13 +567,13 @@ export class CkEditableArray extends HTMLElement {
       this._lastFocusedToggleButton = rowEl?.querySelector(
         '[data-action="toggle"]'
       ) as HTMLElement | null;
-      this._modalEditingIndex = index;
     }
 
     this._rowStates.set(index, {
       editing: true,
       snapshot: this.deepClone(row),
     });
+    this._editingRowIndex = index;
     this.render();
     // Focus first input after entering edit mode
     this.focusFirstInput(index);
@@ -609,11 +607,7 @@ export class CkEditableArray extends HTMLElement {
     }
 
     this._rowStates.set(index, { editing: false });
-
-    // Close modal if in modal mode
-    if (this._modalEdit) {
-      this._modalEditingIndex = -1;
-    }
+    this._editingRowIndex = -1;
 
     this.dispatchEvent(
       new CustomEvent('datachanged', {
@@ -662,10 +656,7 @@ export class CkEditableArray extends HTMLElement {
       this._rowStates.set(index, { editing: false });
     }
 
-    // Close modal if in modal mode
-    if (this._modalEdit) {
-      this._modalEditingIndex = -1;
-    }
+    this._editingRowIndex = -1;
 
     this.render();
 
