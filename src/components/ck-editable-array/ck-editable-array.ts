@@ -27,6 +27,7 @@ export class CkEditableArray extends HTMLElement {
   private _modalEdit = false;
   private _modalEditingIndex = -1;
   private _lastFocusedToggleButton: HTMLElement | null = null;
+  private _modalElement: HTMLElement | null = null;
   // Cached template references
   private _displayTemplate: HTMLTemplateElement | null = null;
   private _editTemplate: HTMLTemplateElement | null = null;
@@ -720,12 +721,9 @@ export class CkEditableArray extends HTMLElement {
 
   // Focus the first input in the editing row
   private focusFirstInput(index: number): void {
-    // In modal mode, focus input in modal
-    if (this._modalEdit) {
-      const modal = this.shadow.querySelector('.ck-modal');
-      if (!modal) return;
-
-      const firstInput = modal.querySelector(
+    // In modal mode, focus input in modal (use cached reference)
+    if (this._modalEdit && this._modalElement) {
+      const firstInput = this._modalElement.querySelector(
         'input, textarea, select'
       ) as HTMLElement | null;
       if (firstInput) {
@@ -872,7 +870,13 @@ export class CkEditableArray extends HTMLElement {
     // Create or get modal element if in modal mode
     let modal: HTMLElement | null = null;
     if (this._modalEdit) {
-      modal = this.shadow.querySelector('.ck-modal') as HTMLElement | null;
+      // Use cached reference or query if not yet cached
+      if (!this._modalElement) {
+        this._modalElement = this.shadow.querySelector('.ck-modal') as HTMLElement | null;
+      }
+
+      modal = this._modalElement;
+
       if (!modal) {
         modal = document.createElement('div');
         modal.className = 'ck-modal ck-hidden';
@@ -891,6 +895,9 @@ export class CkEditableArray extends HTMLElement {
         modal.addEventListener('input', this.handleWrapperInput);
 
         this.shadow.appendChild(modal);
+
+        // Cache the modal reference
+        this._modalElement = modal;
       }
     }
 
