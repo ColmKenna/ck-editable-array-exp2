@@ -88,6 +88,9 @@ describe('FR-018: Schema-Based Validation', () => {
     input.value = '';
     input.dispatchEvent(new Event('input', { bubbles: true }));
 
+    // Wait for debounced validation to complete
+    await new Promise(resolve => setTimeout(resolve, 200));
+
     // Expect disabled
     expect(saveBtn.disabled).toBe(true);
   });
@@ -111,6 +114,9 @@ describe('FR-018: Schema-Based Validation', () => {
     input.value = 'valid';
     input.dispatchEvent(new Event('input', { bubbles: true }));
 
+    // Wait for debounced validation to complete
+    await new Promise(resolve => setTimeout(resolve, 200));
+
     expect(saveBtn.disabled).toBe(false);
   });
 
@@ -131,6 +137,9 @@ describe('FR-018: Schema-Based Validation', () => {
     // Make invalid
     input.value = '';
     input.dispatchEvent(new Event('input', { bubbles: true }));
+
+    // Wait for debounced validation to complete
+    await new Promise(resolve => setTimeout(resolve, 200));
 
     // Invalid state
     expect(input.getAttribute('aria-invalid')).toBe('true');
@@ -157,6 +166,9 @@ describe('FR-018: Schema-Based Validation', () => {
     const input = row.querySelector('input') as HTMLInputElement;
     input.value = 'Valid';
     input.dispatchEvent(new Event('input', { bubbles: true }));
+
+    // Wait for debounced validation to complete
+    await new Promise(resolve => setTimeout(resolve, 200));
 
     // Expect Valid
     expect(row.getAttribute('data-row-invalid')).toBeFalsy();

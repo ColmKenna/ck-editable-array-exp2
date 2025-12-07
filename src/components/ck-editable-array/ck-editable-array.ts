@@ -34,6 +34,8 @@ export class CkEditableArray extends HTMLElement {
   private _templatesInitialized = false;
   // Cache for validated colors to avoid repeated DOM element creation
   private _colorCache: Map<string, string> = new Map();
+  // Debounce timeout for validation
+  private _validationTimeout: ReturnType<typeof setTimeout> | null = null;
 
   // Factory function for creating new items (FR-002)
   private _newItemFactory: () => Record<string, unknown> = () => ({});
@@ -178,6 +180,12 @@ export class CkEditableArray extends HTMLElement {
     }
     this._editingRowIndex = -1;
     this._lastFocusedToggleButton = null;
+
+    // Clear any pending validation timeout
+    if (this._validationTimeout) {
+      clearTimeout(this._validationTimeout);
+      this._validationTimeout = null;
+    }
   }
 
   static get observedAttributes() {
@@ -813,8 +821,15 @@ export class CkEditableArray extends HTMLElement {
     const index = parseInt(row.getAttribute('data-row-index') || '-1', 10);
     if (index >= 0 && this._data[index]) {
       this.setNestedValue(this._data[index], path, target.value);
-      // Update validation state on input
-      this.updateUiValidationState(index);
+
+      // Debounce validation to avoid excessive processing
+      if (this._validationTimeout) {
+        clearTimeout(this._validationTimeout);
+      }
+      this._validationTimeout = setTimeout(() => {
+        this.updateUiValidationState(index);
+        this._validationTimeout = null;
+      }, 150);
     }
   };
 
