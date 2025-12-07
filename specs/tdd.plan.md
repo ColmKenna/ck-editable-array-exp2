@@ -141,19 +141,19 @@ tests/
 
 | Done | Test Case ID | FR | Description | Test File |
 |------|--------------|----|----|------------|
-| [ ] | TC-018-01 | FR-018 | Schema validates required fields | validation.test.ts |
-| [ ] | TC-018-02 | FR-018 | Schema validates minLength | validation.test.ts |
-| [ ] | TC-018-03 | FR-018 | Schema validates maxLength | validation.test.ts |
-| [ ] | TC-018-04 | FR-018 | Schema validates pattern (regex) | validation.test.ts |
-| [ ] | TC-018-05 | FR-018 | Schema supports custom validator | validation.test.ts |
-| [ ] | TC-018-06 | FR-018 | Save button disabled when invalid | validation.test.ts |
-| [ ] | TC-019-01 | FR-019 | Invalid input gets aria-invalid="true" | validation.test.ts |
-| [ ] | TC-019-02 | FR-019 | Invalid input gets data-invalid="true" | validation.test.ts |
-| [ ] | TC-019-03 | FR-019 | Error message shown in data-field-error | validation.test.ts |
-| [ ] | TC-019-04 | FR-019 | aria-describedby links input to error | validation.test.ts |
-| [ ] | TC-020-01 | FR-020 | Edit wrapper gets data-row-invalid="true" | validation.test.ts |
-| [ ] | TC-020-02 | FR-020 | data-error-count shows error count | validation.test.ts |
-| [ ] | TC-020-03 | FR-020 | data-error-summary shows all errors | validation.test.ts |
+| [x] | TC-018-01 | FR-018 | Schema validates required fields | validation.test.ts |
+| [x] | TC-018-02 | FR-018 | Schema validates minLength | validation.test.ts |
+| [x] | TC-018-03 | FR-018 | Schema validates maxLength | validation.test.ts |
+| [x] | TC-018-04 | FR-018 | Schema validates pattern (regex) | validation.test.ts |
+| [x] | TC-018-05 | FR-018 | Schema supports custom validator | validation.test.ts |
+| [x] | TC-018-06 | FR-018 | Save button disabled when invalid | validation.test.ts |
+| [x] | TC-019-01 | FR-019 | Invalid input gets aria-invalid="true" | validation.test.ts |
+| [x] | TC-019-02 | FR-019 | Invalid input gets data-invalid="true" | validation.test.ts |
+| [x] | TC-019-03 | FR-019 | Error message shown in data-field-error | validation.test.ts |
+| [x] | TC-019-04 | FR-019 | aria-describedby links input to error | validation.test.ts |
+| [x] | TC-020-01 | FR-020 | Edit wrapper gets data-row-invalid="true" | validation.test.ts |
+| [x] | TC-020-02 | FR-020 | data-error-count shows error count | validation.test.ts |
+| [x] | TC-020-03 | FR-020 | data-error-summary shows all errors | validation.test.ts |
 
 ### Phase 4: Undo/Redo History (Should-have)
 **Priority**: Should-have
