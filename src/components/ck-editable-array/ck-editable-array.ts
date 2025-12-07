@@ -40,6 +40,7 @@ export class CkEditableArray extends HTMLElement {
       minLength?: number;
       maxLength?: number;
       pattern?: RegExp;
+      custom?: (value: unknown, row: Record<string, unknown>) => boolean;
     }
   > = {};
 
@@ -58,6 +59,7 @@ export class CkEditableArray extends HTMLElement {
       minLength?: number;
       maxLength?: number;
       pattern?: RegExp;
+      custom?: (value: unknown, row: Record<string, unknown>) => boolean;
     }
   > {
     return this._validationSchema;
@@ -71,6 +73,7 @@ export class CkEditableArray extends HTMLElement {
         minLength?: number;
         maxLength?: number;
         pattern?: RegExp;
+        custom?: (value: unknown, row: Record<string, unknown>) => boolean;
       }
     >
   ) {
@@ -393,6 +396,11 @@ export class CkEditableArray extends HTMLElement {
       }
       if (rules.pattern && !rules.pattern.test(strValue)) {
         return false;
+      }
+      if (rules.custom && typeof rules.custom === 'function') {
+        if (!rules.custom(value, row)) {
+          return false;
+        }
       }
     }
 

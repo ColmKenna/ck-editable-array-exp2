@@ -88,4 +88,26 @@ describe('FR-018: Schema-Based Validation', () => {
     // Expect disabled
     expect(saveBtn.disabled).toBe(true);
   });
+
+  test('TC-018-05: Schema supports custom validator', async () => {
+    element.validationSchema = {
+      name: {
+        // @ts-ignore - custom property not yet in type definition
+        custom: (val: string) => val === 'valid'
+      }
+    } as any;
+
+    element.newItemFactory = () => ({ name: 'invalid' });
+    element.addRow();
+
+    const saveBtn = element.shadowRoot?.querySelector('[data-action="save"]') as HTMLButtonElement;
+    expect(saveBtn.disabled).toBe(true);
+
+    const row = element.shadowRoot?.querySelector('[data-row-index="0"]');
+    const input = row?.querySelector('input') as HTMLInputElement;
+    input.value = 'valid';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+
+    expect(saveBtn.disabled).toBe(false);
+  });
 });
