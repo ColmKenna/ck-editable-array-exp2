@@ -69,4 +69,23 @@ describe('FR-018: Schema-Based Validation', () => {
     const row = element.shadowRoot?.querySelector('[data-row-index="0"]');
     expect(row?.querySelector('input')).toBeTruthy();
   });
+
+  test('TC-018-06: Save button disabled when invalid', async () => {
+    element.validationSchema = { name: { required: true } };
+    element.newItemFactory = () => ({ name: 'Test' });
+    element.addRow();
+
+    // Initial state valid
+    const saveBtn = element.shadowRoot?.querySelector('[data-action="save"]') as HTMLButtonElement;
+    expect(saveBtn.disabled).toBe(false);
+
+    // Make invalid
+    const row = element.shadowRoot?.querySelector('[data-row-index="0"]');
+    const input = row?.querySelector('input') as HTMLInputElement;
+    input.value = '';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+
+    // Expect disabled
+    expect(saveBtn.disabled).toBe(true);
+  });
 });

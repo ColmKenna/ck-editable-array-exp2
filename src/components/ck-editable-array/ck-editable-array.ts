@@ -399,6 +399,29 @@ export class CkEditableArray extends HTMLElement {
     return true;
   }
 
+  // Update validation UI state for a row
+  private updateUiValidationState(index: number): void {
+    const row = this.shadow.querySelector(`[data-row-index="${index}"]`);
+    if (!row) return;
+
+    const saveBtn = row.querySelector(
+      '[data-action="save"]'
+    ) as HTMLButtonElement | null;
+
+    // Validate
+    const isValid = this.validateRow(index);
+
+    if (saveBtn) {
+      if (!isValid) {
+        saveBtn.disabled = true;
+        saveBtn.setAttribute('aria-disabled', 'true');
+      } else {
+        saveBtn.disabled = false;
+        saveBtn.removeAttribute('aria-disabled');
+      }
+    }
+  }
+
   // Enter edit mode for a row
   private enterEditMode(index: number): void {
     if (this._readonly) return;
@@ -640,6 +663,8 @@ export class CkEditableArray extends HTMLElement {
     const index = parseInt(row.getAttribute('data-row-index') || '-1', 10);
     if (index >= 0 && this._data[index]) {
       this.setNestedValue(this._data[index], path, target.value);
+      // Update validation state on input
+      this.updateUiValidationState(index);
     }
   };
 
@@ -792,6 +817,18 @@ export class CkEditableArray extends HTMLElement {
           btn.setAttribute('aria-label', actionLabel);
         }
       });
+
+      // strict validation check for save button in edit mode
+      if (isEditing && Object.keys(this._validationSchema).length > 0) {
+        const isValid = this.validateRow(index);
+        const saveBtn = clone.querySelector(
+          '[data-action="save"]'
+        ) as HTMLButtonElement;
+        if (saveBtn && !isValid) {
+          saveBtn.disabled = true;
+          saveBtn.setAttribute('aria-disabled', 'true');
+        }
+      }
 
       // Add toggle button if in display mode and no explicit toggle
       if (!isEditing && !clone.querySelector('[data-action="toggle"]')) {
