@@ -778,6 +778,71 @@ export class CkEditableArray extends HTMLElement {
     this._templatesInitialized = true;
   }
 
+  // Bind data to elements in a cloned template fragment
+  private bindElementData(
+    clone: DocumentFragment,
+    rowData: Record<string, unknown>,
+    index: number,
+    componentName: string
+  ): void {
+    // Bind data to elements with data-bind attribute
+    const bindElements = clone.querySelectorAll('[data-bind]');
+    bindElements.forEach(el => {
+      const path = el.getAttribute('data-bind');
+      if (!path) return;
+
+      const value = this.getNestedValue(rowData, path);
+      const label =
+        el.getAttribute('data-label') || path.split('.').pop() || path;
+
+      if (el instanceof HTMLInputElement) {
+        el.value = this.formatValue(value);
+        el.name = `${componentName}[${index}].${path}`;
+        el.id = `${componentName}_${index}_${path.replace(/\./g, '_')}`;
+
+        if (!el.getAttribute('aria-label') && !el.labels?.length) {
+          el.setAttribute('aria-label', label);
+        }
+
+        if (this._readonly) {
+          el.readOnly = true;
+        }
+      } else if (
+        el instanceof HTMLTextAreaElement ||
+        el instanceof HTMLSelectElement
+      ) {
+        el.value = this.formatValue(value);
+        el.name = `${componentName}[${index}].${path}`;
+        el.id = `${componentName}_${index}_${path.replace(/\./g, '_')}`;
+
+        if (!el.getAttribute('aria-label')) {
+          el.setAttribute('aria-label', label);
+        }
+
+        if (el instanceof HTMLTextAreaElement && this._readonly) {
+          el.readOnly = true;
+        }
+        if (el instanceof HTMLSelectElement && this._readonly) {
+          el.disabled = true;
+        }
+      } else {
+        el.textContent = this.formatValue(value);
+      }
+    });
+
+    // Add ARIA labels to action buttons
+    const actionButtons = clone.querySelectorAll('[data-action]');
+    actionButtons.forEach(btn => {
+      const action = btn.getAttribute('data-action');
+      if (!action) return;
+
+      if (!btn.getAttribute('aria-label')) {
+        const actionLabel = this.getActionLabel(action, index);
+        btn.setAttribute('aria-label', actionLabel);
+      }
+    });
+  }
+
   // Event delegation handler for wrapper
   private handleWrapperClick = (e: Event): void => {
     const target = e.target as HTMLElement;
@@ -965,70 +1030,8 @@ export class CkEditableArray extends HTMLElement {
       if (!templateToUse) return;
       const clone = templateToUse.content.cloneNode(true) as DocumentFragment;
 
-      // Bind data to elements with data-bind attribute
-      const bindElements = clone.querySelectorAll('[data-bind]');
-      bindElements.forEach(el => {
-        const path = el.getAttribute('data-bind');
-        if (!path) return;
-
-        const value = this.getNestedValue(rowData, path);
-        // Get label from data-label attribute or derive from path
-        const label =
-          el.getAttribute('data-label') || path.split('.').pop() || path;
-
-        if (el instanceof HTMLInputElement) {
-          // For inputs, set value and generate name/id attributes
-          el.value = this.formatValue(value);
-          el.name = `${componentName}[${index}].${path}`;
-          el.id = `${componentName}_${index}_${path.replace(/\./g, '_')}`;
-
-          // Add aria-label for accessibility if no explicit label
-          if (!el.getAttribute('aria-label') && !el.labels?.length) {
-            el.setAttribute('aria-label', label);
-          }
-
-          // Set readOnly if component is readonly
-          if (this._readonly) {
-            el.readOnly = true;
-          }
-        } else if (
-          el instanceof HTMLTextAreaElement ||
-          el instanceof HTMLSelectElement
-        ) {
-          // For textareas and selects
-          el.value = this.formatValue(value);
-          el.name = `${componentName}[${index}].${path}`;
-          el.id = `${componentName}_${index}_${path.replace(/\./g, '_')}`;
-
-          // Add aria-label for accessibility if no explicit label
-          if (!el.getAttribute('aria-label')) {
-            el.setAttribute('aria-label', label);
-          }
-
-          if (el instanceof HTMLTextAreaElement && this._readonly) {
-            el.readOnly = true;
-          }
-          if (el instanceof HTMLSelectElement && this._readonly) {
-            el.disabled = true;
-          }
-        } else {
-          // For display elements, set text content
-          el.textContent = this.formatValue(value);
-        }
-      });
-
-      // Add ARIA labels to action buttons
-      const actionButtons = clone.querySelectorAll('[data-action]');
-      actionButtons.forEach(btn => {
-        const action = btn.getAttribute('data-action');
-        if (!action) return;
-
-        // Add descriptive aria-label if not already present
-        if (!btn.getAttribute('aria-label')) {
-          const actionLabel = this.getActionLabel(action, index);
-          btn.setAttribute('aria-label', actionLabel);
-        }
-      });
+      // Bind data to elements (DRY: extracted to bindElementData)
+      this.bindElementData(clone, rowData, index, componentName);
 
       // strict validation check for save button in edit mode
       if (isEditing && Object.keys(this._validationSchema).length > 0) {
@@ -1079,62 +1082,8 @@ export class CkEditableArray extends HTMLElement {
         modalRowEl.setAttribute('data-row-index', String(editingIndex));
         modalRowEl.className = 'ck-modal__row';
 
-        // Bind data to elements with data-bind attribute
-        const bindElements = clone.querySelectorAll('[data-bind]');
-        bindElements.forEach(el => {
-          const path = el.getAttribute('data-bind');
-          if (!path) return;
-
-          const value = this.getNestedValue(rowData, path);
-          const label =
-            el.getAttribute('data-label') || path.split('.').pop() || path;
-
-          if (el instanceof HTMLInputElement) {
-            el.value = this.formatValue(value);
-            el.name = `${componentName}[${editingIndex}].${path}`;
-            el.id = `${componentName}_${editingIndex}_${path.replace(/\./g, '_')}`;
-
-            if (!el.getAttribute('aria-label') && !el.labels?.length) {
-              el.setAttribute('aria-label', label);
-            }
-
-            if (this._readonly) {
-              el.readOnly = true;
-            }
-          } else if (
-            el instanceof HTMLTextAreaElement ||
-            el instanceof HTMLSelectElement
-          ) {
-            el.value = this.formatValue(value);
-            el.name = `${componentName}[${editingIndex}].${path}`;
-            el.id = `${componentName}_${editingIndex}_${path.replace(/\./g, '_')}`;
-
-            if (!el.getAttribute('aria-label')) {
-              el.setAttribute('aria-label', label);
-            }
-
-            if (el instanceof HTMLTextAreaElement && this._readonly) {
-              el.readOnly = true;
-            }
-            if (el instanceof HTMLSelectElement && this._readonly) {
-              el.disabled = true;
-            }
-          } else {
-            el.textContent = this.formatValue(value);
-          }
-        });
-
-        // Add ARIA labels to action buttons
-        const actionButtons = clone.querySelectorAll('[data-action]');
-        actionButtons.forEach(btn => {
-          const action = btn.getAttribute('data-action');
-          if (!action) return;
-
-          if (!btn.getAttribute('aria-label')) {
-            const actionLabel = this.getActionLabel(action, editingIndex);
-            btn.setAttribute('aria-label', actionLabel);
-          }
-        });
+        // Bind data to elements (DRY: extracted to bindElementData)
+        this.bindElementData(clone, rowData, editingIndex, componentName);
 
         modalRowEl.appendChild(clone);
 
