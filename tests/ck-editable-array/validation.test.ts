@@ -12,6 +12,7 @@ describe('FR-018: Schema-Based Validation', () => {
       </template>
       <template data-slot="edit">
         <input data-bind="name" type="text">
+        <span data-field-error="name"></span>
         <button data-action="save">Save</button>
       </template>
     `;
@@ -109,5 +110,30 @@ describe('FR-018: Schema-Based Validation', () => {
     input.dispatchEvent(new Event('input', { bubbles: true }));
 
     expect(saveBtn.disabled).toBe(false);
+  });
+
+  test('TC-019-01 to 03: Invalid input gets validation attributes and error message', async () => {
+    element.validationSchema = { name: { required: true } };
+    element.newItemFactory = () => ({ name: 'Test' });
+    element.addRow();
+
+    const row = element.shadowRoot?.querySelector('[data-row-index="0"]');
+    const input = row?.querySelector('input') as HTMLInputElement;
+    const errorMsg = row?.querySelector('[data-field-error="name"]') as HTMLElement;
+
+    // Valid state
+    expect(input.getAttribute('aria-invalid')).toBeFalsy();
+    expect(input.getAttribute('data-invalid')).toBeFalsy();
+    expect(errorMsg.textContent).toBe('');
+
+    // Make invalid
+    input.value = '';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+
+    // Invalid state
+    expect(input.getAttribute('aria-invalid')).toBe('true');
+    expect(input.getAttribute('data-invalid')).toBe('true');
+    expect(errorMsg.textContent).toBeTruthy();
+    expect(input.getAttribute('aria-describedby')).toBe(errorMsg.id);
   });
 });

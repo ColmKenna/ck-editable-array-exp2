@@ -376,35 +376,46 @@ export class CkEditableArray extends HTMLElement {
     this.render();
   }
 
+
   // Validate a row against the schema
-  private validateRow(index: number): boolean {
+  private validateRow(index: number): {
+    isValid: boolean;
+    errors: Record<string, string>;
+  } {
     const row = this._data[index];
-    if (!row) return false;
+    if (!row) return { isValid: false, errors: {} };
+
+    const errors: Record<string, string> = {};
 
     for (const [field, rules] of Object.entries(this._validationSchema)) {
       const value = this.getNestedValue(row, field);
       const strValue = String(value ?? '');
 
       if (rules.required && !strValue) {
-        return false;
+        errors[field] = 'This field is required';
+        continue;
       }
       if (rules.minLength && strValue.length < rules.minLength) {
-        return false;
+        errors[field] = `Minimum length is ${rules.minLength}`;
+        continue;
       }
       if (rules.maxLength && strValue.length > rules.maxLength) {
-        return false;
+        errors[field] = `Maximum length is ${rules.maxLength}`;
+        continue;
       }
       if (rules.pattern && !rules.pattern.test(strValue)) {
-        return false;
+        errors[field] = 'Invalid format';
+        continue;
       }
       if (rules.custom && typeof rules.custom === 'function') {
         if (!rules.custom(value, row)) {
-          return false;
+          errors[field] = 'Invalid value';
+          continue;
         }
       }
     }
 
-    return true;
+    return { isValid: Object.keys(errors).length === 0, errors };
   }
 
   // Update validation UI state for a row
@@ -417,7 +428,45 @@ export class CkEditableArray extends HTMLElement {
     ) as HTMLButtonElement | null;
 
     // Validate
-    const isValid = this.validateRow(index);
+    const { isValid, errors } = this.validateRow(index);
+
+    // Update field validation state
+    const bindElements = row.querySelectorAll('[data-bind]');
+    bindElements.forEach(el => {
+      const field = el.getAttribute('data-bind');
+      if (!field) return;
+
+      const errorEl = row.querySelector(`[data-field-error="${field}"]`);
+      const hasError = field in errors;
+
+      if (
+        el instanceof HTMLInputElement ||
+        el instanceof HTMLTextAreaElement ||
+        el instanceof HTMLSelectElement
+      ) {
+        if (hasError) {
+          el.setAttribute('aria-invalid', 'true');
+          el.setAttribute('data-invalid', 'true');
+
+          if (errorEl) {
+            errorEl.textContent = errors[field];
+            // Ensure error element has ID for aria-describedby
+            if (!errorEl.id) {
+              errorEl.id = `error-${index}-${field}`;
+            }
+            el.setAttribute('aria-describedby', errorEl.id);
+          }
+        } else {
+          el.removeAttribute('aria-invalid');
+          el.removeAttribute('data-invalid');
+          el.removeAttribute('aria-describedby');
+
+          if (errorEl) {
+            errorEl.textContent = '';
+          }
+        }
+      }
+    });
 
     if (saveBtn) {
       if (!isValid) {
@@ -476,7 +525,7 @@ export class CkEditableArray extends HTMLElement {
 
     // Validate before saving if schema is defined
     if (Object.keys(this._validationSchema).length > 0) {
-      if (!this.validateRow(index)) {
+      if (!this.validateRow(index).isValid) {
         // Validation failed - stay in edit mode
         return;
       }
@@ -828,7 +877,7 @@ export class CkEditableArray extends HTMLElement {
 
       // strict validation check for save button in edit mode
       if (isEditing && Object.keys(this._validationSchema).length > 0) {
-        const isValid = this.validateRow(index);
+        const { isValid } = this.validateRow(index);
         const saveBtn = clone.querySelector(
           '[data-action="save"]'
         ) as HTMLButtonElement;
