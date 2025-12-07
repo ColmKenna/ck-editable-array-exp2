@@ -15,39 +15,39 @@
     </header>
 
     <div class="card">
-      <div style="margin-bottom: 1rem; display: flex; justify-content: flex-end;">
+      <div class="mb-4 flex-row justify-end">
         <button id="addBtn" class="demo-btn">Add Item</button>
       </div>
 
       <ck-editable-array id="myList">
         <template data-slot="display">
-          <div style="display: flex; gap: 1rem; align-items: center; width: 100%;">
-            <div style="flex-grow: 1;">
+          <div class="row-item">
+            <div class="grow">
               <strong data-bind="name"></strong>
-              <span style="color: #666; font-size: 0.9em; margin-left: 0.5rem;" data-bind="email"></span>
+              <span class="text-sm text-muted" style="margin-left: 0.5rem;" data-bind="email"></span>
             </div>
-            <div style="display: flex; gap: 0.5rem;">
-              <button data-action="toggle" class="demo-btn" style="background: #e5e7eb; color: #374151;">Edit</button>
-              <button data-action="delete" class="demo-btn" style="background: #ef4444;">Delete</button>
+            <div class="flex-row gap-2" style="width: auto;">
+              <button data-action="toggle" class="demo-btn btn-secondary">Edit</button>
+              <button data-action="delete" class="demo-btn btn-danger">Delete</button>
             </div>
           </div>
         </template>
 
         <template data-slot="edit">
-          <div style="display: flex; gap: 1rem; align-items: center; width: 100%; border: 2px solid #3b82f6; padding: 1rem; border-radius: 0.5rem; background: #eff6ff;">
-            <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 0.5rem;">
+          <div class="edit-panel">
+            <div class="grow flex-col">
               <label>
                 Name:
-                <input type="text" data-bind="name" style="padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.25rem; width: 100%;">
+                <input type="text" data-bind="name" class="form-input">
               </label>
               <label>
                 Email:
-                <input type="email" data-bind="email" style="padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.25rem; width: 100%;">
+                <input type="email" data-bind="email" class="form-input">
               </label>
             </div>
-            <div style="display: flex; gap: 0.5rem; flex-direction: column;">
-              <button data-action="save" class="demo-btn" style="background: #10b981;">Save</button>
-              <button data-action="cancel" class="demo-btn" style="background: #9ca3af;">Cancel</button>
+            <div class="flex-col">
+              <button data-action="save" class="demo-btn btn-success">Save</button>
+              <button data-action="cancel" class="demo-btn btn-neutral">Cancel</button>
             </div>
           </div>
         </template>
@@ -56,7 +56,7 @@
 
     <div class="card">
       <h2>Component Data</h2>
-      <pre id="output" style="background: #f3f4f6; padding: 1rem; border-radius: 0.5rem; overflow: auto; max-height: 300px;">[]</pre>
+      <pre id="output" class="code-output">[]</pre>
     </div>
   </div>
 

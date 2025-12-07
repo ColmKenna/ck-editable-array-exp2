@@ -5,42 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Validation - ck-editable-array</title>
   <link rel="stylesheet" href="styles.css">
-  <style>
-    /* Demo styles for validation states */
-    input[aria-invalid="true"] {
-      border-color: #ef4444 !important;
-      background-color: #fef2f2;
-    }
-    
-    [data-field-error] {
-      color: #ef4444;
-      font-size: 0.875rem;
-      margin-top: 0.25rem;
-      display: block;
-    }
-
-    [data-row-invalid="true"] {
-      border-color: #ef4444 !important;
-    }
-
-    [data-error-summary] {
-      color: #ef4444;
-      font-weight: 500;
-      margin-bottom: 0.5rem;
-      padding: 0.5rem;
-      background: #fef2f2;
-      border-radius: 0.25rem;
-      display: none;
-    }
-    [data-error-summary]:not(:empty) {
-      display: block;
-    }
-
-    button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-  </style>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <div class="container">
@@ -51,36 +16,36 @@
     </header>
 
     <div class="card">
-      <div style="margin-bottom: 1rem; display: flex; justify-content: flex-end;">
+      <div class="mb-4 flex-row justify-end">
         <button id="addBtn" class="demo-btn">Add User</button>
       </div>
 
       <ck-editable-array id="validationList">
         <template data-slot="display">
-          <div style="display: flex; gap: 1rem; align-items: center; width: 100%; border-bottom: 1px solid #eee; padding: 0.5rem 0;">
-            <div style="flex-grow: 1;">
+          <div class="row-item bordered">
+            <div class="grow">
               <div><strong data-bind="username"></strong></div>
-              <div style="color: #666; font-size: 0.9em;">Role: <span data-bind="role"></span></div>
+              <div class="text-sm text-muted">Role: <span data-bind="role"></span></div>
             </div>
-            <button data-action="toggle" class="demo-btn" style="background: #e5e7eb; color: #374151;">Edit</button>
+            <button data-action="toggle" class="demo-btn btn-secondary">Edit</button>
           </div>
         </template>
 
         <template data-slot="edit">
-          <div style="display: flex; flex-direction: column; gap: 1rem; width: 100%; border: 2px solid #3b82f6; padding: 1.5rem; border-radius: 0.5rem; background: #eff6ff; margin-bottom: 1rem;">
+          <div class="edit-panel vertical mb-4">
             
             <div data-error-summary></div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="w-full" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
               <div>
-                <label style="display: block; margin-bottom: 0.25rem; font-weight: 500;">Username *</label>
-                <input type="text" data-bind="username" placeholder="Min 3 chars" style="padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.25rem; width: 100%;">
+                <label class="form-label">Username *</label>
+                <input type="text" data-bind="username" placeholder="Min 3 chars" class="form-input">
                 <span data-field-error="username"></span>
               </div>
               
               <div>
-                <label style="display: block; margin-bottom: 0.25rem; font-weight: 500;">Role</label>
-                <select data-bind="role" style="padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.25rem; width: 100%;">
+                <label class="form-label">Role</label>
+                <select data-bind="role" class="form-input">
                   <option value="">Select a role...</option>
                   <option value="admin">Admin</option>
                   <option value="editor">Editor</option>
@@ -90,9 +55,9 @@
               </div>
             </div>
 
-            <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 0.5rem;">
-              <button data-action="cancel" class="demo-btn" style="background: #9ca3af;">Cancel</button>
-              <button data-action="save" class="demo-btn" style="background: #10b981;">Save Changes</button>
+            <div class="flex-row gap-2 justify-end mt-2">
+              <button data-action="cancel" class="demo-btn btn-neutral">Cancel</button>
+              <button data-action="save" class="demo-btn btn-success">Save Changes</button>
             </div>
           </div>
         </template>
