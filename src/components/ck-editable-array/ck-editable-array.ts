@@ -32,6 +32,8 @@ export class CkEditableArray extends HTMLElement {
   private _displayTemplate: HTMLTemplateElement | null = null;
   private _editTemplate: HTMLTemplateElement | null = null;
   private _templatesInitialized = false;
+  // Cache for validated colors to avoid repeated DOM element creation
+  private _colorCache: Map<string, string> = new Map();
 
   // Factory function for creating new items (FR-002)
   private _newItemFactory: () => Record<string, unknown> = () => ({});
@@ -1160,14 +1162,27 @@ export class CkEditableArray extends HTMLElement {
 
   private getSanitizedColor(value: string) {
     if (!value) return '#333';
+
+    // Check cache first
+    if (this._colorCache.has(value)) {
+      return this._colorCache.get(value)!;
+    }
+
+    // Validate and cache the color
     try {
       const el = document.createElement('div');
       el.style.color = value;
       // Browser normalizes valid colors to a non-empty string
-      if (el.style.color) return value;
+      if (el.style.color) {
+        this._colorCache.set(value, value);
+        return value;
+      }
     } catch {
       // ignore
     }
+
+    // Cache the fallback color for this invalid value
+    this._colorCache.set(value, '#333');
     return '#333';
   }
 }
