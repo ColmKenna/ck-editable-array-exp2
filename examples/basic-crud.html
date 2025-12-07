@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Basic CRUD - ck-editable-array</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <a href="index.html" class="back-link">← Back to Examples</a>
+      <h1>Basic CRUD</h1>
+      <p class="subtitle">Add, edit, delete, and restore items.</p>
+    </header>
+
+    <div class="card">
+      <div style="margin-bottom: 1rem; display: flex; justify-content: flex-end;">
+        <button id="addBtn" class="demo-btn">Add Item</button>
+      </div>
+
+      <ck-editable-array id="myList">
+        <template data-slot="display">
+          <div style="display: flex; gap: 1rem; align-items: center; width: 100%;">
+            <div style="flex-grow: 1;">
+              <strong data-bind="name"></strong>
+              <span style="color: #666; font-size: 0.9em; margin-left: 0.5rem;" data-bind="email"></span>
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+              <button data-action="toggle" class="demo-btn" style="background: #e5e7eb; color: #374151;">Edit</button>
+              <button data-action="delete" class="demo-btn" style="background: #ef4444;">Delete</button>
+            </div>
+          </div>
+        </template>
+
+        <template data-slot="edit">
+          <div style="display: flex; gap: 1rem; align-items: center; width: 100%; border: 2px solid #3b82f6; padding: 1rem; border-radius: 0.5rem; background: #eff6ff;">
+            <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 0.5rem;">
+              <label>
+                Name:
+                <input type="text" data-bind="name" style="padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.25rem; width: 100%;">
+              </label>
+              <label>
+                Email:
+                <input type="email" data-bind="email" style="padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.25rem; width: 100%;">
+              </label>
+            </div>
+            <div style="display: flex; gap: 0.5rem; flex-direction: column;">
+              <button data-action="save" class="demo-btn" style="background: #10b981;">Save</button>
+              <button data-action="cancel" class="demo-btn" style="background: #9ca3af;">Cancel</button>
+            </div>
+          </div>
+        </template>
+      </ck-editable-array>
+    </div>
+
+    <div class="card">
+      <h2>Component Data</h2>
+      <pre id="output" style="background: #f3f4f6; padding: 1rem; border-radius: 0.5rem; overflow: auto; max-height: 300px;">[]</pre>
+    </div>
+  </div>
+
+  <script type="module">
+    import '../dist/ck-editable-array/ck-editable-array.esm.js';
+
+    const list = document.getElementById('myList');
+    const addBtn = document.getElementById('addBtn');
+    const output = document.getElementById('output');
+
+    // Initial data
+    list.data = [
+      { name: 'Alice Smith', email: 'alice@example.com' },
+      { name: 'Bob Jones', email: 'bob@example.com' }
+    ];
+
+    // Factory for new items
+    list.newItemFactory = () => ({
+      name: '',
+      email: ''
+    });
+
+    // Handle add button
+    addBtn.addEventListener('click', () => {
+      list.addRow();
+    });
+
+    // Listen for data changes
+    list.addEventListener('datachanged', (e) => {
+      output.textContent = JSON.stringify(e.detail.data, null, 2);
+    });
+
+    // Listen for events to log
+    ['beforetogglemode', 'aftertogglemode'].forEach(evt => {
+      list.addEventListener(evt, (e) => {
+        console.log(`${evt}:`, e.detail);
+      });
+    });
+
+    // Initial output
+    output.textContent = JSON.stringify(list.data, null, 2);
+  </script>
+</body>
+</html>
