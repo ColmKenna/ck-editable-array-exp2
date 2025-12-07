@@ -26,6 +26,7 @@
       <!-- Note: readonly attribute is set here -->
       <ck-editable-array id="readonlyList" readonly>
         <template data-slot="display">
+          <link rel="stylesheet" href="styles.css">
           <div class="row-item bordered">
              <div class="avatar">#</div>
              <div class="grow">
@@ -39,6 +40,7 @@
         
         <!-- Edit template provided but shouldn't be accessible -->
         <template data-slot="edit">
+            <link rel="stylesheet" href="styles.css">
             <div style="border: 1px solid red; padding: 1rem;">
                 This should not be seen!
                 <input data-bind="title">
