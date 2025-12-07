@@ -168,6 +168,14 @@ export class CkEditableArray extends HTMLElement {
   disconnectedCallback() {
     // Cleanup listeners to avoid memory leaks
     window.removeEventListener('resize', this._onResize);
+
+    // Clean up modal element and reset state
+    if (this._modalElement) {
+      this._modalElement.remove();
+      this._modalElement = null;
+    }
+    this._modalEditingIndex = -1;
+    this._lastFocusedToggleButton = null;
   }
 
   static get observedAttributes() {
