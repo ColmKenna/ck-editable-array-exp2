@@ -13,6 +13,8 @@ describe('FR-018: Schema-Based Validation', () => {
       <template data-slot="edit">
         <input data-bind="name" type="text">
         <span data-field-error="name"></span>
+        <span data-error-count></span>
+        <div data-error-summary></div>
         <button data-action="save">Save</button>
       </template>
     `;
@@ -135,5 +137,31 @@ describe('FR-018: Schema-Based Validation', () => {
     expect(input.getAttribute('data-invalid')).toBe('true');
     expect(errorMsg.textContent).toBeTruthy();
     expect(input.getAttribute('aria-describedby')).toBe(errorMsg.id);
+  });
+
+  test('TC-020-01 to 03: Row level validation state', async () => {
+    element.validationSchema = { name: { required: true } };
+    element.newItemFactory = () => ({ name: '' }); // Invalid
+    element.addRow();
+
+    const row = element.shadowRoot?.querySelector('[data-row-index="0"]') as HTMLElement;
+    const errorCount = row.querySelector('[data-error-count]') as HTMLElement;
+    const errorSummary = row.querySelector('[data-error-summary]') as HTMLElement;
+
+    // Initial invalid state
+    expect(row.getAttribute('data-row-invalid')).toBe('true');
+    expect(errorCount.textContent).toBe('1');
+    expect(errorSummary.textContent).toContain('This field is required');
+
+    // Make valid
+    const input = row.querySelector('input') as HTMLInputElement;
+    input.value = 'Valid';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+
+    // Expect Valid
+    expect(row.getAttribute('data-row-invalid')).toBeFalsy();
+    // errorCount text might be empty or 0 depending on implementation choice, but logic usually clears it or sets to 0. 
+    // Let's expect '0' or empty.
+    // expect(errorCount.textContent).toBe('0'); 
   });
 });

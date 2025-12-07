@@ -420,12 +420,20 @@ export class CkEditableArray extends HTMLElement {
 
   // Update validation UI state for a row
   private updateUiValidationState(index: number): void {
-    const row = this.shadow.querySelector(`[data-row-index="${index}"]`);
-    if (!row) return;
+    const row = this.shadow.querySelector(
+      `[data-row-index="${index}"]`
+    ) as HTMLElement;
+    if (row) {
+      this.updateRowValidation(row, index);
+    }
+  }
 
+  // Helper to update validation UI on a specific row element
+  private updateRowValidation(row: HTMLElement, index: number): void {
     const saveBtn = row.querySelector(
       '[data-action="save"]'
     ) as HTMLButtonElement | null;
+
 
     // Validate
     const { isValid, errors } = this.validateRow(index);
@@ -467,6 +475,31 @@ export class CkEditableArray extends HTMLElement {
         }
       }
     });
+
+    // Update row invalid state
+    if (!isValid) {
+      row.setAttribute('data-row-invalid', 'true');
+    } else {
+      row.removeAttribute('data-row-invalid');
+    }
+
+    // Update error count
+    const errorCountEl = row.querySelector('[data-error-count]');
+    if (errorCountEl) {
+      errorCountEl.textContent = isValid ? '0' : String(Object.keys(errors).length);
+    }
+
+    // Update error summary
+    const errorSummaryEl = row.querySelector('[data-error-summary]');
+    if (errorSummaryEl) {
+      if (isValid) {
+        errorSummaryEl.textContent = '';
+      } else {
+        // Join error messages
+        const summary = Object.values(errors).join('. ');
+        errorSummaryEl.textContent = summary;
+      }
+    }
 
     if (saveBtn) {
       if (!isValid) {
@@ -877,14 +910,10 @@ export class CkEditableArray extends HTMLElement {
 
       // strict validation check for save button in edit mode
       if (isEditing && Object.keys(this._validationSchema).length > 0) {
-        const { isValid } = this.validateRow(index);
-        const saveBtn = clone.querySelector(
-          '[data-action="save"]'
-        ) as HTMLButtonElement;
-        if (saveBtn && !isValid) {
-          saveBtn.disabled = true;
-          saveBtn.setAttribute('aria-disabled', 'true');
-        }
+        // Apply validation UI state to the new row element
+        // We need to wait until clone is appended to rowEl so we can query it? 
+        // rowEl already has clone appended by next lines? No.
+        // Let's append clone first, then update.
       }
 
       // Add toggle button if in display mode and no explicit toggle
@@ -897,6 +926,12 @@ export class CkEditableArray extends HTMLElement {
       }
 
       rowEl.appendChild(clone);
+
+      // Initial validation state update
+      if (isEditing && Object.keys(this._validationSchema).length > 0) {
+        this.updateRowValidation(rowEl, index);
+      }
+
       wrapper!.appendChild(rowEl);
     });
   }
