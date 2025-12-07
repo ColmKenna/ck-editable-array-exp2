@@ -278,4 +278,54 @@ describe('FR-027: Modal Close on Save/Cancel', () => {
     ) as HTMLElement;
     expect(element.shadowRoot?.activeElement).toBe(newToggleBtn);
   });
+
+  test('TC-027-05: Clicking overlay closes modal', () => {
+    document.body.appendChild(element);
+
+    (element as unknown as { modalEdit: boolean }).modalEdit = true;
+
+    type RowData = { name: string };
+    (element as unknown as { data: RowData[] }).data = [{ name: 'Alice' }];
+
+    // Enter edit mode
+    const toggleBtn = element.shadowRoot?.querySelector(
+      '[data-action="toggle"]'
+    ) as HTMLElement;
+    toggleBtn?.click();
+
+    const modal = element.shadowRoot?.querySelector('.ck-modal') as HTMLElement;
+    expect(modal?.classList.contains('ck-hidden')).toBe(false);
+
+    // Click the overlay (not the content)
+    modal?.click();
+
+    // Modal should be closed
+    expect(modal?.classList.contains('ck-hidden')).toBe(true);
+    expect(modal?.getAttribute('aria-hidden')).toBe('true');
+  });
+
+  test('TC-027-06: Clicking modal content does not close modal', () => {
+    document.body.appendChild(element);
+
+    (element as unknown as { modalEdit: boolean }).modalEdit = true;
+
+    type RowData = { name: string };
+    (element as unknown as { data: RowData[] }).data = [{ name: 'Alice' }];
+
+    // Enter edit mode
+    const toggleBtn = element.shadowRoot?.querySelector(
+      '[data-action="toggle"]'
+    ) as HTMLElement;
+    toggleBtn?.click();
+
+    const modal = element.shadowRoot?.querySelector('.ck-modal') as HTMLElement;
+    const modalContent = modal?.querySelector('.ck-modal__content') as HTMLElement;
+
+    // Click the modal content
+    modalContent?.click();
+
+    // Modal should still be open
+    expect(modal?.classList.contains('ck-hidden')).toBe(false);
+    expect(modal?.getAttribute('aria-hidden')).toBe('false');
+  });
 });

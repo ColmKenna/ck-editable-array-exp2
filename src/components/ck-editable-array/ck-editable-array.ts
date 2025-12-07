@@ -819,6 +819,18 @@ export class CkEditableArray extends HTMLElement {
     }
   };
 
+  // Event handler for modal overlay clicks
+  private handleModalClick = (e: Event): void => {
+    const target = e.target as HTMLElement;
+    // Only close if clicking the overlay itself, not the content
+    if (target.classList.contains('ck-modal')) {
+      const editingIndex = this.getEditingRowIndex();
+      if (editingIndex !== -1) {
+        this.cancelEdit(editingIndex);
+      }
+    }
+  };
+
   private render() {
     // Guard: don't render if not connected to DOM
     if (!this.isConnected) return;
@@ -873,7 +885,8 @@ export class CkEditableArray extends HTMLElement {
         modalContent.className = 'ck-modal__content';
         modal.appendChild(modalContent);
 
-        // Add event listeners to modal
+        // Add event listeners only when creating modal (not on every render)
+        modal.addEventListener('click', this.handleModalClick);
         modal.addEventListener('click', this.handleWrapperClick);
         modal.addEventListener('input', this.handleWrapperInput);
 
