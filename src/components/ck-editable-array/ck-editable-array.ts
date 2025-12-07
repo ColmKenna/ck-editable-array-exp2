@@ -28,6 +28,54 @@ export class CkEditableArray extends HTMLElement {
   private _displayTemplate: HTMLTemplateElement | null = null;
   private _editTemplate: HTMLTemplateElement | null = null;
   private _templatesInitialized = false;
+
+  // Factory function for creating new items (FR-002)
+  private _newItemFactory: () => Record<string, unknown> = () => ({});
+
+  // Validation schema for form validation (FR-018)
+  private _validationSchema: Record<
+    string,
+    {
+      required?: boolean;
+      minLength?: number;
+      maxLength?: number;
+      pattern?: RegExp;
+    }
+  > = {};
+
+  get newItemFactory(): () => Record<string, unknown> {
+    return this._newItemFactory;
+  }
+
+  set newItemFactory(factory: () => Record<string, unknown>) {
+    this._newItemFactory = factory;
+  }
+
+  get validationSchema(): Record<
+    string,
+    {
+      required?: boolean;
+      minLength?: number;
+      maxLength?: number;
+      pattern?: RegExp;
+    }
+  > {
+    return this._validationSchema;
+  }
+
+  set validationSchema(
+    schema: Record<
+      string,
+      {
+        required?: boolean;
+        minLength?: number;
+        maxLength?: number;
+        pattern?: RegExp;
+      }
+    >
+  ) {
+    this._validationSchema = schema;
+  }
   private deepClone<T>(value: T): T {
     // Use structuredClone when available for broader type support
     try {
@@ -59,7 +107,8 @@ export class CkEditableArray extends HTMLElement {
       const objCopy: Record<string, unknown> = {};
       seen.set(v, objCopy);
       const objKeys = Object.keys(v as Record<string, unknown>);
-      for (const key of objKeys) objCopy[key] = clone((v as Record<string, unknown>)[key]);
+      for (const key of objKeys)
+        objCopy[key] = clone((v as Record<string, unknown>)[key]);
       return objCopy;
     };
 
@@ -191,7 +240,7 @@ export class CkEditableArray extends HTMLElement {
 
   // Validate path parts to prevent prototype pollution
   private isValidPath(parts: string[]): boolean {
-    return !parts.some((part) => FORBIDDEN_PATHS.has(part));
+    return !parts.some(part => FORBIDDEN_PATHS.has(part));
   }
 
   // Helper to get a nested value from an object using dot notation
@@ -244,6 +293,112 @@ export class CkEditableArray extends HTMLElement {
     return -1;
   }
 
+  // FR-002: Add a new row
+  addRow(): void {
+    // Block if readonly
+    if (this._readonly) return;
+
+    // Block if another row is currently being edited
+    if (this.getEditingRowIndex() !== -1) return;
+
+    // Create new item using factory
+    const newItem = this._newItemFactory();
+    // Mark as new row
+    (newItem as Record<string, unknown>).__isNew = true;
+
+    // Add to data array
+    this._data.push(newItem);
+    const newIndex = this._data.length - 1;
+
+    // Enter edit mode automatically for new row
+    this._rowStates.set(newIndex, {
+      editing: true,
+      snapshot: this.deepClone(newItem),
+    });
+
+    // Dispatch datachanged event
+    this.dispatchEvent(
+      new CustomEvent('datachanged', {
+        bubbles: true,
+        detail: { data: this.deepClone(this._data) },
+      })
+    );
+
+    this.render();
+    this.focusFirstInput(newIndex);
+  }
+
+  // FR-006: Soft delete a row
+  deleteRow(index: number): void {
+    // Block if readonly
+    if (this._readonly) return;
+
+    // Block if row is currently being edited
+    const state = this._rowStates.get(index);
+    if (state?.editing) return;
+
+    const row = this._data[index];
+    if (!row) return;
+
+    // Set deleted flag
+    row.deleted = true;
+
+    // Dispatch datachanged event
+    this.dispatchEvent(
+      new CustomEvent('datachanged', {
+        bubbles: true,
+        detail: { data: this.deepClone(this._data) },
+      })
+    );
+
+    this.render();
+  }
+
+  // FR-007: Restore a soft-deleted row
+  restoreRow(index: number): void {
+    const row = this._data[index];
+    if (!row) return;
+
+    // Set deleted flag to false
+    row.deleted = false;
+
+    // Dispatch datachanged event
+    this.dispatchEvent(
+      new CustomEvent('datachanged', {
+        bubbles: true,
+        detail: { data: this.deepClone(this._data) },
+      })
+    );
+
+    this.render();
+  }
+
+  // Validate a row against the schema
+  private validateRow(index: number): boolean {
+    const row = this._data[index];
+    if (!row) return false;
+
+    for (const [field, rules] of Object.entries(this._validationSchema)) {
+      const value = this.getNestedValue(row, field);
+      const strValue = String(value ?? '');
+
+      if (rules.required && !strValue) {
+        return false;
+      }
+      if (rules.minLength && strValue.length < rules.minLength) {
+        return false;
+      }
+      if (rules.maxLength && strValue.length > rules.maxLength) {
+        return false;
+      }
+      if (rules.pattern && !rules.pattern.test(strValue)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
   // Enter edit mode for a row
   private enterEditMode(index: number): void {
     if (this._readonly) return;
@@ -255,6 +410,17 @@ export class CkEditableArray extends HTMLElement {
     const row = this._data[index];
     if (!row) return;
 
+    // Dispatch beforetogglemode event (cancelable)
+    const beforeEvent = new CustomEvent('beforetogglemode', {
+      bubbles: true,
+      cancelable: true,
+      detail: { index, editing: true },
+    });
+    this.dispatchEvent(beforeEvent);
+
+    // If event was canceled, don't enter edit mode
+    if (beforeEvent.defaultPrevented) return;
+
     this._rowStates.set(index, {
       editing: true,
       snapshot: this.deepClone(row),
@@ -262,12 +428,34 @@ export class CkEditableArray extends HTMLElement {
     this.render();
     // Focus first input after entering edit mode
     this.focusFirstInput(index);
+
+    // Dispatch aftertogglemode event
+    this.dispatchEvent(
+      new CustomEvent('aftertogglemode', {
+        bubbles: true,
+        detail: { index, editing: true },
+      })
+    );
   }
 
   // Save changes to a row
   private saveRow(index: number): void {
     const state = this._rowStates.get(index);
     if (!state?.editing) return;
+
+    // Validate before saving if schema is defined
+    if (Object.keys(this._validationSchema).length > 0) {
+      if (!this.validateRow(index)) {
+        // Validation failed - stay in edit mode
+        return;
+      }
+    }
+
+    // Remove __isNew marker on save
+    const row = this._data[index];
+    if (row && '__isNew' in row) {
+      delete row.__isNew;
+    }
 
     this._rowStates.set(index, { editing: false });
     this.dispatchEvent(
@@ -286,13 +474,62 @@ export class CkEditableArray extends HTMLElement {
     const state = this._rowStates.get(index);
     if (!state?.editing) return;
 
-    if (state.snapshot) {
-      this._data[index] = this.deepClone(state.snapshot);
+    // Dispatch beforetogglemode event (cancelable)
+    const beforeEvent = new CustomEvent('beforetogglemode', {
+      bubbles: true,
+      cancelable: true,
+      detail: { index, editing: false },
+    });
+    this.dispatchEvent(beforeEvent);
+
+    // If event was canceled, stay in edit mode
+    if (beforeEvent.defaultPrevented) return;
+
+    const row = this._data[index];
+    const isNewRow = row && '__isNew' in row && row.__isNew === true;
+
+    if (isNewRow) {
+      // Remove new row entirely when canceled
+      this._data.splice(index, 1);
+      this._rowStates.delete(index);
+      // Reindex remaining row states
+      this.reindexRowStates(index);
+    } else {
+      // Restore snapshot for existing rows
+      if (state.snapshot) {
+        this._data[index] = this.deepClone(state.snapshot);
+      }
+      this._rowStates.set(index, { editing: false });
     }
-    this._rowStates.set(index, { editing: false });
+
     this.render();
-    // Return focus to toggle button after cancel
-    this.focusToggleButton(index);
+
+    // Return focus to toggle button after cancel (if row still exists)
+    if (!isNewRow) {
+      this.focusToggleButton(index);
+    }
+
+    // Dispatch aftertogglemode event
+    this.dispatchEvent(
+      new CustomEvent('aftertogglemode', {
+        bubbles: true,
+        detail: { index, editing: false },
+      })
+    );
+  }
+
+  // Reindex row states after removing a row
+  private reindexRowStates(removedIndex: number): void {
+    const newStates = new Map<number, RowState>();
+    for (const [idx, state] of this._rowStates) {
+      if (idx > removedIndex) {
+        newStates.set(idx - 1, state);
+      } else if (idx < removedIndex) {
+        newStates.set(idx, state);
+      }
+      // Skip the removed index
+    }
+    this._rowStates = newStates;
   }
 
   // Handle action button clicks
@@ -306,6 +543,15 @@ export class CkEditableArray extends HTMLElement {
         break;
       case 'cancel':
         this.cancelEdit(index);
+        break;
+      case 'add':
+        this.addRow();
+        break;
+      case 'delete':
+        this.deleteRow(index);
+        break;
+      case 'restore':
+        this.restoreRow(index);
         break;
       default:
         // Unknown action - silently ignore in production
@@ -358,8 +604,17 @@ export class CkEditableArray extends HTMLElement {
     if (!actionBtn) return;
 
     const action = actionBtn.getAttribute('data-action');
+    if (!action) return;
+
+    // Handle global actions (no row context needed)
+    if (action === 'add') {
+      this.addRow();
+      return;
+    }
+
+    // For row-specific actions, require a row context
     const row = actionBtn.closest('[data-row-index]') as HTMLElement | null;
-    if (!action || !row) return;
+    if (!row) return;
 
     const index = parseInt(row.getAttribute('data-row-index') || '-1', 10);
     if (index >= 0) {
@@ -450,6 +705,7 @@ export class CkEditableArray extends HTMLElement {
     this._data.forEach((rowData, index) => {
       const state = this._rowStates.get(index);
       const isEditing = state?.editing ?? false;
+      const isDeleted = rowData.deleted === true;
 
       // Create row container with ARIA listitem role
       const rowEl = document.createElement('div');
@@ -457,6 +713,11 @@ export class CkEditableArray extends HTMLElement {
       rowEl.setAttribute('role', 'listitem');
       rowEl.setAttribute('aria-label', `Item ${index + 1}`);
       rowEl.className = 'ck-editable-array__row';
+
+      // Add ck-deleted class for soft-deleted rows
+      if (isDeleted) {
+        rowEl.classList.add('ck-deleted');
+      }
 
       // Determine which template to use
       const templateToUse =
@@ -469,16 +730,14 @@ export class CkEditableArray extends HTMLElement {
 
       // Bind data to elements with data-bind attribute
       const bindElements = clone.querySelectorAll('[data-bind]');
-      bindElements.forEach((el) => {
+      bindElements.forEach(el => {
         const path = el.getAttribute('data-bind');
         if (!path) return;
 
         const value = this.getNestedValue(rowData, path);
         // Get label from data-label attribute or derive from path
         const label =
-          el.getAttribute('data-label') ||
-          path.split('.').pop() ||
-          path;
+          el.getAttribute('data-label') || path.split('.').pop() || path;
 
         if (el instanceof HTMLInputElement) {
           // For inputs, set value and generate name/id attributes
@@ -523,7 +782,7 @@ export class CkEditableArray extends HTMLElement {
 
       // Add ARIA labels to action buttons
       const actionButtons = clone.querySelectorAll('[data-action]');
-      actionButtons.forEach((btn) => {
+      actionButtons.forEach(btn => {
         const action = btn.getAttribute('data-action');
         if (!action) return;
 

@@ -52,3 +52,66 @@ Files changed in this cycle:
 
 Notes:
 - Lint now passes and all tests pass (`npm test`). The repository adheres to the lint and formatting rules.
+
+---
+
+### 2025-12-06 - Phase 2: CRUD Operations (FR-002 to FR-007)
+
+#### Cycle 4: Add Row Feature (FR-002)
+- RED: Created `tests/ck-editable-array/add-row.test.ts` with 6 failing tests:
+  - TC-002-01: data-action="add" creates new row
+  - TC-002-02: New row uses newItemFactory
+  - TC-002-03: New row marked with __isNew
+  - TC-002-04: New row enters edit mode automatically
+  - TC-002-05: Add blocked when another row editing
+  - TC-002-06: Add blocked in readonly mode
+- GREEN: Implemented:
+  - `newItemFactory` property for custom item creation
+  - `addRow()` public method
+  - `data-action="add"` handler (global action, no row context needed)
+  - `__isNew` marker for new rows
+  - Auto-enter edit mode for new rows
+  - Blocking logic for readonly and when another row is editing
+
+#### Cycle 5: Edit Mode Events (FR-003, FR-004, FR-005)
+- RED: Created `tests/ck-editable-array/edit-mode.test.ts` with 18 failing tests covering:
+  - Toggle edit mode (FR-003): beforetogglemode/aftertogglemode events, snapshot storage, exclusive locking
+  - Save row (FR-004): Exit edit mode, remove __isNew marker, validation blocking
+  - Cancel edit (FR-005): Restore snapshot, remove new rows on cancel, cancelable events
+- GREEN: Implemented:
+  - `beforetogglemode` event (cancelable) before entering/exiting edit mode
+  - `aftertogglemode` event after mode changes
+  - `validationSchema` property for field validation
+  - `validateRow()` method to check required, minLength, maxLength, pattern rules
+  - Save blocked when validation fails
+  - Cancel removes new rows (with __isNew), restores snapshot for existing rows
+  - `reindexRowStates()` helper to maintain state consistency after row removal
+
+#### Cycle 6: Delete/Restore (FR-006, FR-007)
+- RED: Created `tests/ck-editable-array/delete-restore.test.ts` with 8 failing tests:
+  - TC-006-01 to TC-006-05: Soft delete with deleted flag, ck-deleted class, events, blocking
+  - TC-007-01 to TC-007-03: Restore functionality
+- GREEN: Implemented:
+  - `deleteRow(index)` public method with soft delete pattern
+  - `restoreRow(index)` public method
+  - `data-action="delete"` and `data-action="restore"` handlers
+  - `ck-deleted` CSS class added to deleted rows
+  - Delete blocked in readonly mode and when row is editing
+  - `datachanged` event dispatched on delete/restore
+
+#### REFACTOR: Code Organization
+- Extracted global action handling (`add`) from row-specific actions in `handleWrapperClick`
+- Added browser globals to ESLint config for test files (HTMLInputElement, Event, CustomEvent, etc.)
+- All 57 tests pass, lint passes
+
+Files changed in this phase:
+- `src/components/ck-editable-array/ck-editable-array.ts` - Added CRUD methods and event dispatching
+- `tests/ck-editable-array/add-row.test.ts` - New test file
+- `tests/ck-editable-array/edit-mode.test.ts` - New test file
+- `tests/ck-editable-array/delete-restore.test.ts` - New test file
+- `eslint.config.js` - Added browser globals for tests
+
+Test Coverage:
+- 57 tests total (32 new for Phase 2)
+- All tests passing
+- Lint clean

@@ -102,38 +102,38 @@ tests/
 
 | Done | Test Case ID | FR | Description | Test File |
 |------|--------------|----|----|------------|
-| [ ] | TC-002-01 | FR-002 | data-action="add" creates new row | add-row.test.ts |
-| [ ] | TC-002-02 | FR-002 | New row uses newItemFactory | add-row.test.ts |
-| [ ] | TC-002-03 | FR-002 | New row marked with __isNew | add-row.test.ts |
-| [ ] | TC-002-04 | FR-002 | New row enters edit mode automatically | add-row.test.ts |
-| [ ] | TC-002-05 | FR-002 | Add blocked when another row editing | add-row.test.ts |
-| [ ] | TC-002-06 | FR-002 | Add blocked in readonly mode | add-row.test.ts |
-| [ ] | TC-003-01 | FR-003 | data-action="toggle" enters edit mode | edit-mode.test.ts |
-| [ ] | TC-003-02 | FR-003 | beforetogglemode event fired (cancelable) | edit-mode.test.ts |
-| [ ] | TC-003-03 | FR-003 | Original state stored as snapshot | edit-mode.test.ts |
-| [ ] | TC-003-04 | FR-003 | Row editing property set to true | edit-mode.test.ts |
-| [ ] | TC-003-05 | FR-003 | Display hidden, edit shown | edit-mode.test.ts |
-| [ ] | TC-003-06 | FR-003 | Focus moves to first input | edit-mode.test.ts |
-| [ ] | TC-003-07 | FR-003 | aftertogglemode event fired | edit-mode.test.ts |
-| [ ] | TC-003-08 | FR-003 | Exclusive locking - only one row editable | edit-mode.test.ts |
-| [ ] | TC-004-01 | FR-004 | data-action="save" exits edit mode | edit-mode.test.ts |
-| [ ] | TC-004-02 | FR-004 | Save removes editing flag and markers | edit-mode.test.ts |
-| [ ] | TC-004-03 | FR-004 | datachanged event dispatched | edit-mode.test.ts |
-| [ ] | TC-004-04 | FR-004 | Focus returns to toggle button | edit-mode.test.ts |
-| [ ] | TC-004-05 | FR-004 | Save blocked if validation fails | edit-mode.test.ts |
-| [ ] | TC-005-01 | FR-005 | data-action="cancel" exits edit mode | edit-mode.test.ts |
-| [ ] | TC-005-02 | FR-005 | Cancel restores original data from snapshot | edit-mode.test.ts |
-| [ ] | TC-005-03 | FR-005 | Cancel removes new row (__isNew) | edit-mode.test.ts |
-| [ ] | TC-005-04 | FR-005 | beforetogglemode event fired (cancelable) | edit-mode.test.ts |
-| [ ] | TC-005-05 | FR-005 | aftertogglemode event fired | edit-mode.test.ts |
-| [ ] | TC-006-01 | FR-006 | data-action="delete" sets deleted:true | delete-restore.test.ts |
-| [ ] | TC-006-02 | FR-006 | Row receives ck-deleted class | delete-restore.test.ts |
-| [ ] | TC-006-03 | FR-006 | datachanged event dispatched | delete-restore.test.ts |
-| [ ] | TC-006-04 | FR-006 | Delete blocked when row editing | delete-restore.test.ts |
-| [ ] | TC-006-05 | FR-006 | Delete blocked in readonly mode | delete-restore.test.ts |
-| [ ] | TC-007-01 | FR-007 | data-action="restore" sets deleted:false | delete-restore.test.ts |
-| [ ] | TC-007-02 | FR-007 | ck-deleted class removed | delete-restore.test.ts |
-| [ ] | TC-007-03 | FR-007 | datachanged event dispatched | delete-restore.test.ts |
+| [x] | TC-002-01 | FR-002 | data-action="add" creates new row | add-row.test.ts |
+| [x] | TC-002-02 | FR-002 | New row uses newItemFactory | add-row.test.ts |
+| [x] | TC-002-03 | FR-002 | New row marked with __isNew | add-row.test.ts |
+| [x] | TC-002-04 | FR-002 | New row enters edit mode automatically | add-row.test.ts |
+| [x] | TC-002-05 | FR-002 | Add blocked when another row editing | add-row.test.ts |
+| [x] | TC-002-06 | FR-002 | Add blocked in readonly mode | add-row.test.ts |
+| [x] | TC-003-01 | FR-003 | data-action="toggle" enters edit mode | edit-mode.test.ts |
+| [x] | TC-003-02 | FR-003 | beforetogglemode event fired (cancelable) | edit-mode.test.ts |
+| [x] | TC-003-03 | FR-003 | Original state stored as snapshot | edit-mode.test.ts |
+| [x] | TC-003-04 | FR-003 | Row editing property set to true | edit-mode.test.ts |
+| [x] | TC-003-05 | FR-003 | Display hidden, edit shown | edit-mode.test.ts |
+| [x] | TC-003-06 | FR-003 | Focus moves to first input | edit-mode.test.ts |
+| [x] | TC-003-07 | FR-003 | aftertogglemode event fired | edit-mode.test.ts |
+| [x] | TC-003-08 | FR-003 | Exclusive locking - only one row editable | edit-mode.test.ts |
+| [x] | TC-004-01 | FR-004 | data-action="save" exits edit mode | edit-mode.test.ts |
+| [x] | TC-004-02 | FR-004 | Save removes editing flag and markers | edit-mode.test.ts |
+| [x] | TC-004-03 | FR-004 | datachanged event dispatched | edit-mode.test.ts |
+| [x] | TC-004-04 | FR-004 | Focus returns to toggle button | edit-mode.test.ts |
+| [x] | TC-004-05 | FR-004 | Save blocked if validation fails | edit-mode.test.ts |
+| [x] | TC-005-01 | FR-005 | data-action="cancel" exits edit mode | edit-mode.test.ts |
+| [x] | TC-005-02 | FR-005 | Cancel restores original data from snapshot | edit-mode.test.ts |
+| [x] | TC-005-03 | FR-005 | Cancel removes new row (__isNew) | edit-mode.test.ts |
+| [x] | TC-005-04 | FR-005 | beforetogglemode event fired (cancelable) | edit-mode.test.ts |
+| [x] | TC-005-05 | FR-005 | aftertogglemode event fired | edit-mode.test.ts |
+| [x] | TC-006-01 | FR-006 | data-action="delete" sets deleted:true | delete-restore.test.ts |
+| [x] | TC-006-02 | FR-006 | Row receives ck-deleted class | delete-restore.test.ts |
+| [x] | TC-006-03 | FR-006 | datachanged event dispatched | delete-restore.test.ts |
+| [x] | TC-006-04 | FR-006 | Delete blocked when row editing | delete-restore.test.ts |
+| [x] | TC-006-05 | FR-006 | Delete blocked in readonly mode | delete-restore.test.ts |
+| [x] | TC-007-01 | FR-007 | data-action="restore" sets deleted:false | delete-restore.test.ts |
+| [x] | TC-007-02 | FR-007 | ck-deleted class removed | delete-restore.test.ts |
+| [x] | TC-007-03 | FR-007 | datachanged event dispatched | delete-restore.test.ts |
 
 ### Phase 3: Validation (Must-have)
 **Priority**: Must-have
