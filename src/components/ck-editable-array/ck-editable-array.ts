@@ -118,7 +118,7 @@ export class CkEditableArray extends HTMLElement {
 
   // FR-010: Undo - restore previous state
   undo(): void {
-    if (!this.canUndo) return;
+    if (this._readonly || !this.canUndo) return;
 
     // Push current state to redo stack
     this._redoStack.push(this.deepClone(this._data));
@@ -150,7 +150,7 @@ export class CkEditableArray extends HTMLElement {
 
   // FR-011: Redo - restore next state
   redo(): void {
-    if (!this.canRedo) return;
+    if (this._readonly || !this.canRedo) return;
 
     // Push current state to history
     this._history.push(this.deepClone(this._data));
@@ -285,6 +285,10 @@ export class CkEditableArray extends HTMLElement {
       clearTimeout(this._validationTimeout);
       this._validationTimeout = null;
     }
+
+    // Clear history to prevent memory leaks
+    this._history = [];
+    this._redoStack = [];
   }
 
   static get observedAttributes() {

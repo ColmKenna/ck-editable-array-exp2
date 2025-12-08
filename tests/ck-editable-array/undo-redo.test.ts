@@ -386,3 +386,71 @@ describe('FR-013: Clear History', () => {
     expect(elementWithHistory.canRedo).toBe(false);
   });
 });
+
+describe('Undo/Redo Readonly Mode', () => {
+  let element: CkEditableArray;
+
+  beforeEach(() => {
+    element = document.createElement('ck-editable-array') as CkEditableArray;
+    element.innerHTML = `
+      <template data-slot="display">
+        <span data-bind="name"></span>
+      </template>
+      <template data-slot="edit">
+        <input data-bind="name" type="text" />
+        <button data-action="save">Save</button>
+      </template>
+    `;
+    document.body.appendChild(element);
+  });
+
+  afterEach(() => {
+    element.remove();
+  });
+
+  test('undo blocked in readonly mode', () => {
+    type RowData = { name: string };
+    const elementWithUndo = element as unknown as {
+      data: RowData[];
+      undo: () => void;
+      readonly: boolean;
+    };
+
+    // Set initial data and make a change
+    elementWithUndo.data = [{ name: 'Alice' }];
+    elementWithUndo.data = [{ name: 'Bob' }];
+
+    // Enable readonly
+    elementWithUndo.readonly = true;
+
+    // Try undo
+    elementWithUndo.undo();
+
+    // Should still be Bob (undo blocked)
+    expect(elementWithUndo.data[0].name).toBe('Bob');
+  });
+
+  test('redo blocked in readonly mode', () => {
+    type RowData = { name: string };
+    const elementWithRedo = element as unknown as {
+      data: RowData[];
+      undo: () => void;
+      redo: () => void;
+      readonly: boolean;
+    };
+
+    // Setup: set data, change, undo
+    elementWithRedo.data = [{ name: 'Alice' }];
+    elementWithRedo.data = [{ name: 'Bob' }];
+    elementWithRedo.undo();
+
+    // Enable readonly
+    elementWithRedo.readonly = true;
+
+    // Try redo
+    elementWithRedo.redo();
+
+    // Should still be Alice (redo blocked)
+    expect(elementWithRedo.data[0].name).toBe('Alice');
+  });
+});
