@@ -94,7 +94,28 @@ Single click and input listeners on the wrapper element handle all interactions:
 - Soft delete pattern allows undo/restore and preserves data for form submission.
 - Exclusive edit locking prevents conflicting edits across rows.
 
+## Performance (Phase 12)
+
+### NFR-P-001: Efficient DOM Updates
+
+Input changes do not trigger full component re-renders:
+- `handleWrapperInput` updates data directly without calling `render()`
+- Only validation state is updated via `updateUiValidationState()`
+- DOM element references are preserved across input changes
+- Validation is debounced (150ms) to avoid excessive processing
+
+### NFR-P-003: Initial Render Performance
+
+Verified through automated testing:
+- 100 rows render in < 150ms in test environment
+- Performance optimizations include:
+  - Cached template references (`_displayTemplate`, `_editTemplate`)
+  - Cached color validation results
+  - Event delegation (single listener on wrapper)
+  - Minimal DOM operations during render
+
 ## Notes / Future Improvements
 - Consider using a deep cloning library or structured cloning algorithm for better performance and broader type support.
 - Consider adding a `dataImmutable` property to toggle cloning behavior for advanced use cases.
 - Validation error display (FR-019, FR-020) not yet implemented.
+- History/undo-redo performance (NFR-P-002) to be validated when Phase 4 is implemented.
