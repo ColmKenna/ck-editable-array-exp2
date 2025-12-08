@@ -420,10 +420,6 @@ export class CkEditableArray extends HTMLElement {
     }
   }
 
-  private _onResize = () => {
-    // placeholder for future resize behavior
-  };
-
   constructor() {
     super();
     this.shadow = this.attachShadow({ mode: 'open' });
@@ -446,13 +442,10 @@ export class CkEditableArray extends HTMLElement {
   connectedCallback() {
     // Ensure rendering
     this.render();
-    // Add a global listener we can test cleanup for
-    window.addEventListener('resize', this._onResize);
   }
 
   disconnectedCallback() {
     // Cleanup listeners to avoid memory leaks
-    window.removeEventListener('resize', this._onResize);
 
     // Clean up modal element and reset state
     if (this._modalElement) {

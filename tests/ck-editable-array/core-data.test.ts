@@ -100,22 +100,6 @@ describe('FR-001: Data Property Getter/Setter - core behavior', () => {
     expect(componentData[0].ts.getTime()).toBe(d.getTime());
   });
 
-  test('TC-003-01: connectedCallback adds resize listener and disconnectedCallback removes it', () => {
-    // Create an unattached element so we can spy before it is connected
-    const newEl = new CkEditableArray();
-    const addSpy = jest.spyOn(window, 'addEventListener');
-    const removeSpy = jest.spyOn(window, 'removeEventListener');
-
-    document.body.appendChild(newEl); // triggers connectedCallback
-    expect(addSpy).toHaveBeenCalledWith('resize', expect.any(Function));
-
-    newEl.remove(); // triggers disconnectedCallback
-    expect(removeSpy).toHaveBeenCalledWith('resize', expect.any(Function));
-
-    addSpy.mockRestore();
-    removeSpy.mockRestore();
-  });
-
   test('TC-005-01: Invalid color values are sanitized to default', () => {
     element.color = 'javascript:alert(1)';
     element.connectedCallback();
