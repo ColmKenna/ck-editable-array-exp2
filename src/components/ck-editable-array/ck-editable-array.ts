@@ -55,6 +55,9 @@ export class CkEditableArray extends HTMLElement {
   // Factory function for creating new items (FR-002)
   private _newItemFactory: () => Record<string, unknown> = () => ({});
 
+  // i18n configuration (FR-021)
+  private _i18n: Record<string, string> = {};
+
   // Validation schema for form validation (FR-018)
   private _validationSchema: Record<
     string,
@@ -102,6 +105,16 @@ export class CkEditableArray extends HTMLElement {
   ) {
     this._validationSchema = schema;
   }
+
+  get i18n(): Record<string, string> {
+    return this._i18n;
+  }
+
+  set i18n(value: Record<string, string>) {
+    this._i18n = value;
+  }
+
+
 
   // FR-010, FR-011: Undo/Redo properties
   get canUndo(): boolean {
@@ -917,19 +930,29 @@ export class CkEditableArray extends HTMLElement {
       const strValue = String(value ?? '');
 
       if (rules.required && !strValue) {
-        errors[field] = 'This field is required';
+        errors[field] =
+          this._i18n.required || 'This field is required';
         continue;
       }
       if (rules.minLength && strValue.length < rules.minLength) {
-        errors[field] = `Minimum length is ${rules.minLength}`;
+        errors[field] =
+          (this._i18n.minLength || 'Minimum length is {min}').replace(
+            '{min}',
+            String(rules.minLength)
+          );
         continue;
       }
       if (rules.maxLength && strValue.length > rules.maxLength) {
-        errors[field] = `Maximum length is ${rules.maxLength}`;
+        errors[field] =
+          (this._i18n.maxLength || 'Maximum length is {max}').replace(
+            '{max}',
+            String(rules.maxLength)
+          );
         continue;
       }
       if (rules.pattern && !rules.pattern.test(strValue)) {
-        errors[field] = 'Invalid format';
+        errors[field] =
+          this._i18n.pattern || 'Invalid format';
         continue;
       }
       if (rules.custom && typeof rules.custom === 'function') {

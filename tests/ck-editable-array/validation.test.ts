@@ -193,3 +193,114 @@ describe('FR-018: Schema-Based Validation', () => {
     // expect(errorCount.textContent).toBe('0');
   });
 });
+
+describe('FR-021: i18n Support', () => {
+  let element: CkEditableArray;
+
+  beforeEach(() => {
+    element = new CkEditableArray();
+    element.innerHTML = `
+            <template data-slot="display">
+                <span data-bind="name"></span>
+                <button data-action="toggle">Edit</button>
+            </template>
+            <template data-slot="edit">
+                <input data-bind="name" type="text">
+                <span data-field-error="name"></span>
+                <button data-action="save">Save</button>
+            </template>
+        `;
+    document.body.appendChild(element);
+  });
+
+  afterEach(() => {
+    element.remove();
+  });
+
+  test('TC-021-01: i18n messages used for required', async () => {
+    // Set i18n BEFORE validation schema to ensure messages are available
+    element.i18n = {
+      required: 'Campo requerido'
+    };
+    element.validationSchema = { name: { required: true } };
+    element.newItemFactory = () => ({ name: 'initially valid' });
+    element.addRow();
+
+    const row = element.shadowRoot?.querySelector('[data-row-index="0"]');
+    const input = row?.querySelector('input[data-bind="name"]') as HTMLInputElement;
+    const errorMsg = row?.querySelector('[data-field-error="name"]');
+
+    // Make input invalid to trigger validation with i18n message
+    input.value = '';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+
+    // Wait for debounced validation
+    await new Promise(resolve => setTimeout(resolve, 200));
+
+    expect(errorMsg?.textContent).toBe('Campo requerido');
+  });
+
+  test('TC-021-02: i18n messages used for minLength', async () => {
+    // Set i18n BEFORE validation schema
+    element.i18n = {
+      minLength: 'Mínimo {min} caracteres'
+    };
+    element.validationSchema = { name: { minLength: 5 } };
+    element.newItemFactory = () => ({ name: 'Valid Name' });
+    element.addRow();
+
+    const row = element.shadowRoot?.querySelector('[data-row-index="0"]');
+    const input = row?.querySelector('input[data-bind="name"]') as HTMLInputElement;
+    const errorMsg = row?.querySelector('[data-field-error="name"]');
+
+    // Make input invalid (too short)
+    input.value = 'Abc';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+
+    await new Promise(resolve => setTimeout(resolve, 200));
+
+    expect(errorMsg?.textContent).toBe('Mínimo 5 caracteres');
+  });
+
+  test('TC-021-03: i18n messages used for maxLength', async () => {
+    element.i18n = {
+      maxLength: 'Máximo {max} caracteres'
+    };
+    element.validationSchema = { name: { maxLength: 10 } };
+    element.newItemFactory = () => ({ name: 'Short' });
+    element.addRow();
+
+    const row = element.shadowRoot?.querySelector('[data-row-index="0"]');
+    const input = row?.querySelector('input[data-bind="name"]') as HTMLInputElement;
+    const errorMsg = row?.querySelector('[data-field-error="name"]');
+
+    // Make input invalid (too long)
+    input.value = 'This is way too long for the limit';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+
+    await new Promise(resolve => setTimeout(resolve, 200));
+
+    expect(errorMsg?.textContent).toBe('Máximo 10 caracteres');
+  });
+
+  test('TC-021-04: i18n messages used for pattern', async () => {
+    element.i18n = {
+      pattern: 'Solo mayúsculas permitidas'
+    };
+    element.validationSchema = { name: { pattern: /^[A-Z]+$/ } };
+    element.newItemFactory = () => ({ name: 'VALID' });
+    element.addRow();
+
+    const row = element.shadowRoot?.querySelector('[data-row-index="0"]');
+    const input = row?.querySelector('input[data-bind="name"]') as HTMLInputElement;
+    const errorMsg = row?.querySelector('[data-field-error="name"]');
+
+    // Make input invalid (contains lowercase)
+    input.value = 'Invalid123';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+
+    await new Promise(resolve => setTimeout(resolve, 200));
+
+    expect(errorMsg?.textContent).toBe('Solo mayúsculas permitidas');
+  });
+});
