@@ -413,7 +413,6 @@ export class CkEditableArray extends HTMLElement {
     this.render();
   }
 
-
   // Validate a row against the schema
   private validateRow(index: number): {
     isValid: boolean;
@@ -471,7 +470,6 @@ export class CkEditableArray extends HTMLElement {
       '[data-action="save"]'
     ) as HTMLButtonElement | null;
 
-
     // Validate
     const { isValid, errors } = this.validateRow(index);
 
@@ -523,7 +521,9 @@ export class CkEditableArray extends HTMLElement {
     // Update error count
     const errorCountEl = row.querySelector('[data-error-count]');
     if (errorCountEl) {
-      errorCountEl.textContent = isValid ? '0' : String(Object.keys(errors).length);
+      errorCountEl.textContent = isValid
+        ? '0'
+        : String(Object.keys(errors).length);
     }
 
     // Update error summary
@@ -953,7 +953,9 @@ export class CkEditableArray extends HTMLElement {
     if (this._modalEdit) {
       // Use cached reference or query if not yet cached
       if (!this._modalElement) {
-        this._modalElement = this.shadow.querySelector('.ck-modal') as HTMLElement | null;
+        this._modalElement = this.shadow.querySelector(
+          '.ck-modal'
+        ) as HTMLElement | null;
       }
 
       modal = this._modalElement;
@@ -1036,7 +1038,7 @@ export class CkEditableArray extends HTMLElement {
       // strict validation check for save button in edit mode
       if (isEditing && Object.keys(this._validationSchema).length > 0) {
         // Apply validation UI state to the new row element
-        // We need to wait until clone is appended to rowEl so we can query it? 
+        // We need to wait until clone is appended to rowEl so we can query it?
         // rowEl already has clone appended by next lines? No.
         // Let's append clone first, then update.
       }

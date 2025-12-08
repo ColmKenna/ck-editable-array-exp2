@@ -183,9 +183,7 @@ describe('FR-027: Modal Close on Save/Cancel', () => {
     expect(modal?.classList.contains('ck-hidden')).toBe(false);
 
     // Click save button in modal
-    const saveBtn = modal?.querySelector(
-      '[data-action="save"]'
-    ) as HTMLElement;
+    const saveBtn = modal?.querySelector('[data-action="save"]') as HTMLElement;
     saveBtn?.click();
 
     // Modal should be hidden
@@ -238,9 +236,7 @@ describe('FR-027: Modal Close on Save/Cancel', () => {
     expect(modal?.getAttribute('aria-hidden')).toBe('false');
 
     // Close modal by clicking save
-    const saveBtn = modal?.querySelector(
-      '[data-action="save"]'
-    ) as HTMLElement;
+    const saveBtn = modal?.querySelector('[data-action="save"]') as HTMLElement;
     saveBtn?.click();
 
     // Modal should have aria-hidden="true"
@@ -264,9 +260,7 @@ describe('FR-027: Modal Close on Save/Cancel', () => {
     const modal = element.shadowRoot?.querySelector('.ck-modal') as HTMLElement;
 
     // Close modal by clicking save
-    const saveBtn = modal?.querySelector(
-      '[data-action="save"]'
-    ) as HTMLElement;
+    const saveBtn = modal?.querySelector('[data-action="save"]') as HTMLElement;
     saveBtn?.click();
 
     // Wait for microtask to complete (focus restoration is async)
@@ -319,7 +313,9 @@ describe('FR-027: Modal Close on Save/Cancel', () => {
     toggleBtn?.click();
 
     const modal = element.shadowRoot?.querySelector('.ck-modal') as HTMLElement;
-    const modalContent = modal?.querySelector('.ck-modal__content') as HTMLElement;
+    const modalContent = modal?.querySelector(
+      '.ck-modal__content'
+    ) as HTMLElement;
 
     // Click the modal content
     modalContent?.click();

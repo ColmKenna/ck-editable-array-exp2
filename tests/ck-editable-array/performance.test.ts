@@ -81,7 +81,7 @@ describe('ck-editable-array - Performance (Phase 12)', () => {
       nameInput.dispatchEvent(new Event('input', { bubbles: true }));
 
       // Wait for any debounced updates
-      return new Promise((resolve) => {
+      return new Promise(resolve => {
         setTimeout(() => {
           // Verify the input value is updated in the data
           const updatedData = element.data;

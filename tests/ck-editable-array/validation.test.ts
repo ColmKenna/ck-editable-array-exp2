@@ -27,7 +27,7 @@ describe('FR-018: Schema-Based Validation', () => {
 
   test('TC-018-01: Schema validates required fields', async () => {
     element.validationSchema = {
-      name: { required: true }
+      name: { required: true },
     };
     element.newItemFactory = () => ({ name: '' });
     element.addRow();
@@ -47,7 +47,9 @@ describe('FR-018: Schema-Based Validation', () => {
     element.validationSchema = { name: { minLength: 3 } };
     element.newItemFactory = () => ({ name: 'Ab' }); // Too short
     element.addRow();
-    const saveBtn = element.shadowRoot?.querySelector('[data-action="save"]') as HTMLElement;
+    const saveBtn = element.shadowRoot?.querySelector(
+      '[data-action="save"]'
+    ) as HTMLElement;
     saveBtn.click();
     const row = element.shadowRoot?.querySelector('[data-row-index="0"]');
     expect(row?.querySelector('input')).toBeTruthy();
@@ -57,7 +59,9 @@ describe('FR-018: Schema-Based Validation', () => {
     element.validationSchema = { name: { maxLength: 3 } };
     element.newItemFactory = () => ({ name: 'Abcd' }); // Too long
     element.addRow();
-    const saveBtn = element.shadowRoot?.querySelector('[data-action="save"]') as HTMLElement;
+    const saveBtn = element.shadowRoot?.querySelector(
+      '[data-action="save"]'
+    ) as HTMLElement;
     saveBtn.click();
     const row = element.shadowRoot?.querySelector('[data-row-index="0"]');
     expect(row?.querySelector('input')).toBeTruthy();
@@ -67,7 +71,9 @@ describe('FR-018: Schema-Based Validation', () => {
     element.validationSchema = { name: { pattern: /^[A-Z]+$/ } };
     element.newItemFactory = () => ({ name: 'abc' }); // Lowercase, invalid
     element.addRow();
-    const saveBtn = element.shadowRoot?.querySelector('[data-action="save"]') as HTMLElement;
+    const saveBtn = element.shadowRoot?.querySelector(
+      '[data-action="save"]'
+    ) as HTMLElement;
     saveBtn.click();
     const row = element.shadowRoot?.querySelector('[data-row-index="0"]');
     expect(row?.querySelector('input')).toBeTruthy();
@@ -79,7 +85,9 @@ describe('FR-018: Schema-Based Validation', () => {
     element.addRow();
 
     // Initial state valid
-    const saveBtn = element.shadowRoot?.querySelector('[data-action="save"]') as HTMLButtonElement;
+    const saveBtn = element.shadowRoot?.querySelector(
+      '[data-action="save"]'
+    ) as HTMLButtonElement;
     expect(saveBtn.disabled).toBe(false);
 
     // Make invalid
@@ -98,15 +106,17 @@ describe('FR-018: Schema-Based Validation', () => {
   test('TC-018-05: Schema supports custom validator', async () => {
     element.validationSchema = {
       name: {
-        // @ts-ignore - custom property not yet in type definition
-        custom: (val: string) => val === 'valid'
-      }
-    } as any;
+        // @ts-expect-error - custom property is in type definition but testing type safety
+        custom: (val: string) => val === 'valid',
+      },
+    };
 
     element.newItemFactory = () => ({ name: 'invalid' });
     element.addRow();
 
-    const saveBtn = element.shadowRoot?.querySelector('[data-action="save"]') as HTMLButtonElement;
+    const saveBtn = element.shadowRoot?.querySelector(
+      '[data-action="save"]'
+    ) as HTMLButtonElement;
     expect(saveBtn.disabled).toBe(true);
 
     const row = element.shadowRoot?.querySelector('[data-row-index="0"]');
@@ -127,7 +137,9 @@ describe('FR-018: Schema-Based Validation', () => {
 
     const row = element.shadowRoot?.querySelector('[data-row-index="0"]');
     const input = row?.querySelector('input') as HTMLInputElement;
-    const errorMsg = row?.querySelector('[data-field-error="name"]') as HTMLElement;
+    const errorMsg = row?.querySelector(
+      '[data-field-error="name"]'
+    ) as HTMLElement;
 
     // Valid state
     expect(input.getAttribute('aria-invalid')).toBeFalsy();
@@ -153,9 +165,13 @@ describe('FR-018: Schema-Based Validation', () => {
     element.newItemFactory = () => ({ name: '' }); // Invalid
     element.addRow();
 
-    const row = element.shadowRoot?.querySelector('[data-row-index="0"]') as HTMLElement;
+    const row = element.shadowRoot?.querySelector(
+      '[data-row-index="0"]'
+    ) as HTMLElement;
     const errorCount = row.querySelector('[data-error-count]') as HTMLElement;
-    const errorSummary = row.querySelector('[data-error-summary]') as HTMLElement;
+    const errorSummary = row.querySelector(
+      '[data-error-summary]'
+    ) as HTMLElement;
 
     // Initial invalid state
     expect(row.getAttribute('data-row-invalid')).toBe('true');
@@ -172,8 +188,8 @@ describe('FR-018: Schema-Based Validation', () => {
 
     // Expect Valid
     expect(row.getAttribute('data-row-invalid')).toBeFalsy();
-    // errorCount text might be empty or 0 depending on implementation choice, but logic usually clears it or sets to 0. 
+    // errorCount text might be empty or 0 depending on implementation choice, but logic usually clears it or sets to 0.
     // Let's expect '0' or empty.
-    // expect(errorCount.textContent).toBe('0'); 
+    // expect(errorCount.textContent).toBe('0');
   });
 });
