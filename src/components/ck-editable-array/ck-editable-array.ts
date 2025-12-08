@@ -43,6 +43,9 @@ export class CkEditableArray extends HTMLElement {
   private _maxHistorySize = 50;
   private _skipHistoryPush = false;
 
+  // Selection state (FR-017)
+  private _selectedIndices: number[] = [];
+
   // Factory function for creating new items (FR-002)
   private _newItemFactory: () => Record<string, unknown> = () => ({});
 
@@ -558,6 +561,143 @@ export class CkEditableArray extends HTMLElement {
   // Get the currently editing row index (-1 if none)
   private getEditingRowIndex(): number {
     return this._editingRowIndex;
+  }
+
+  get selectedIndices(): number[] {
+    return [...this._selectedIndices];
+  }
+
+  // FR-017: Selection methods
+
+  // Check if a row is selected
+  isSelected(index: number): boolean {
+    return this._selectedIndices.includes(index);
+  }
+
+  // Select a row
+  select(index: number): void {
+    if (index < 0 || index >= this._data.length) return;
+    if (this.isSelected(index)) return;
+
+    this._selectedIndices.push(index);
+    // Sort indices for consistency
+    this._selectedIndices.sort((a, b) => a - b);
+
+    this.dispatchSelectionChanged();
+    this.render();
+  }
+
+  // Deselect a row
+  deselect(index: number): void {
+    const pos = this._selectedIndices.indexOf(index);
+    if (pos === -1) return;
+
+    this._selectedIndices.splice(pos, 1);
+    this.dispatchSelectionChanged();
+    this.render();
+  }
+
+  // Toggle selection
+  toggleSelection(index: number): void {
+    if (this.isSelected(index)) {
+      this.deselect(index);
+    } else {
+      this.select(index);
+    }
+  }
+
+  // Select all rows
+  selectAll(): void {
+    this._selectedIndices = this._data.map((_, i) => i);
+    this.dispatchSelectionChanged();
+    this.render();
+  }
+
+  // Clear selection
+  clearSelection(): void {
+    if (this._selectedIndices.length === 0) return;
+    this._selectedIndices = [];
+    this.dispatchSelectionChanged();
+    this.render();
+  }
+
+  // Alias for clearSelection
+  deselectAll(): void {
+    this.clearSelection();
+  }
+
+  // Delete selected rows (soft delete)
+  deleteSelected(): void {
+    if (this._readonly) return;
+
+    // Soft delete all selected rows that aren't being edited
+    let changed = false;
+    for (const index of this._selectedIndices) {
+      // Skip if editing
+      const state = this._rowStates.get(index);
+      if (state?.editing) continue;
+
+      const row = this._data[index];
+      if (row && !row.deleted) {
+        row.deleted = true;
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      this.dispatchEvent(
+        new CustomEvent('datachanged', {
+          bubbles: true,
+          detail: { data: this.deepClone(this._data) },
+        })
+      );
+    }
+
+    // Clear selection after delete
+    this.clearSelection();
+  }
+
+  // Mark selected as deleted (explicit method from tests)
+  markSelectedDeleted(): void {
+    this.deleteSelected();
+  }
+
+  // Bulk update selected rows
+  bulkUpdate(updates: Partial<Record<string, unknown>>): void {
+    if (this._readonly) return;
+
+    let changed = false;
+    for (const index of this._selectedIndices) {
+      const row = this._data[index];
+      if (row) {
+        Object.assign(row, updates);
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      this.dispatchEvent(
+        new CustomEvent('datachanged', {
+          bubbles: true,
+          detail: { data: this.deepClone(this._data) },
+        })
+      );
+      this.render();
+    }
+  }
+
+  // Get data of selected rows
+  getSelectedData(): Record<string, unknown>[] {
+    return this._selectedIndices.map(i => this.deepClone(this._data[i]));
+  }
+
+  private dispatchSelectionChanged(): void {
+    this.dispatchEvent(
+      new CustomEvent('selectionchanged', {
+        bubbles: true,
+        detail: { selectedIndices: [...this._selectedIndices] },
+      })
+    );
   }
 
   // FR-002: Add a new row
@@ -1250,6 +1390,12 @@ export class CkEditableArray extends HTMLElement {
       rowEl.setAttribute('role', 'listitem');
       rowEl.setAttribute('aria-label', `Item ${index + 1}`);
       rowEl.className = 'ck-editable-array__row';
+
+      // FR-017: Selection attributes
+      if (this.isSelected(index)) {
+        rowEl.setAttribute('data-selected', 'true');
+        rowEl.setAttribute('aria-selected', 'true');
+      }
 
       // Add ck-deleted class for soft-deleted rows
       if (isDeleted) {
