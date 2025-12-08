@@ -342,3 +342,52 @@ select[aria-invalid="true"] {
 [data-error-summary]:not(:empty) {
   display: block;
 }
+
+/* --- Deleted Row Styles --- */
+.ck-deleted {
+  opacity: 0.6;
+  background: #fef2f2 !important;
+}
+
+.ck-deleted .row-item {
+  text-decoration: line-through;
+  color: #9ca3af;
+}
+
+/* Hide delete button when row is deleted */
+.ck-deleted [data-action="delete"],
+.ck-deleted [data-action="toggle"] {
+  display: none;
+}
+
+/* Show restore button only when row is deleted */
+[data-action="restore"] {
+  display: none;
+}
+
+.ck-deleted [data-action="restore"] {
+  display: inline-block;
+}
+
+/* Restore button styling */
+.btn-restore {
+  background: #f59e0b;
+  color: white;
+}
+
+.btn-restore:hover {
+  background: #d97706;
+}
+
+/* --- Justify Between --- */
+.justify-between {
+  justify-content: space-between;
+}
+
+.mt-3 {
+  margin-top: 0.75rem;
+}
+
+.gap-3 {
+  gap: 0.75rem;
+}
