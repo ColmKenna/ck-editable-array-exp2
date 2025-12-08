@@ -161,18 +161,18 @@ tests/
 
 | Done | Test Case ID | FR | Description | Test File |
 |------|--------------|----|----|------------|
-| [ ] | TC-010-01 | FR-010 | undo() restores previous state | undo-redo.test.ts |
-| [ ] | TC-010-02 | FR-010 | canUndo returns true when history exists | undo-redo.test.ts |
-| [ ] | TC-010-03 | FR-010 | datachanged event dispatched on undo | undo-redo.test.ts |
-| [ ] | TC-010-04 | FR-010 | undo event dispatched with data | undo-redo.test.ts |
-| [ ] | TC-011-01 | FR-011 | redo() restores next state | undo-redo.test.ts |
-| [ ] | TC-011-02 | FR-011 | canRedo returns true after undo | undo-redo.test.ts |
-| [ ] | TC-011-03 | FR-011 | datachanged event dispatched on redo | undo-redo.test.ts |
-| [ ] | TC-011-04 | FR-011 | redo event dispatched with data | undo-redo.test.ts |
-| [ ] | TC-012-01 | FR-012 | History respects maxHistorySize | undo-redo.test.ts |
-| [ ] | TC-012-02 | FR-012 | Oldest entries removed when limit exceeded | undo-redo.test.ts |
-| [ ] | TC-013-01 | FR-013 | clearHistory() empties history | undo-redo.test.ts |
-| [ ] | TC-013-02 | FR-013 | canUndo/canRedo false after clear | undo-redo.test.ts |
+| [x] | TC-010-01 | FR-010 | undo() restores previous state | undo-redo.test.ts |
+| [x] | TC-010-02 | FR-010 | canUndo returns true when history exists | undo-redo.test.ts |
+| [x] | TC-010-03 | FR-010 | datachanged event dispatched on undo | undo-redo.test.ts |
+| [x] | TC-010-04 | FR-010 | undo event dispatched with data | undo-redo.test.ts |
+| [x] | TC-011-01 | FR-011 | redo() restores next state | undo-redo.test.ts |
+| [x] | TC-011-02 | FR-011 | canRedo returns true after undo | undo-redo.test.ts |
+| [x] | TC-011-03 | FR-011 | datachanged event dispatched on redo | undo-redo.test.ts |
+| [x] | TC-011-04 | FR-011 | redo event dispatched with data | undo-redo.test.ts |
+| [x] | TC-012-01 | FR-012 | History respects maxHistorySize | undo-redo.test.ts |
+| [x] | TC-012-02 | FR-012 | Oldest entries removed when limit exceeded | undo-redo.test.ts |
+| [x] | TC-013-01 | FR-013 | clearHistory() empties history | undo-redo.test.ts |
+| [x] | TC-013-02 | FR-013 | canUndo/canRedo false after clear | undo-redo.test.ts |
 
 ### Phase 5: Row Reordering (Should-have)
 **Priority**: Should-have
