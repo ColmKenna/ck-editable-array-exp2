@@ -939,7 +939,8 @@ export class CkEditableArray extends HTMLElement {
       })
     );
 
-    this.render();
+    // Efficiently update just the row's classes instead of full re-render
+    this.updateRowDeletedState(index, true);
   }
 
   // FR-007: Restore a soft-deleted row
@@ -958,7 +959,25 @@ export class CkEditableArray extends HTMLElement {
       })
     );
 
-    this.render();
+    // Efficiently update just the row's classes instead of full re-render
+    this.updateRowDeletedState(index, false);
+  }
+
+  // Update row's deleted visual state without full re-render
+  private updateRowDeletedState(index: number, isDeleted: boolean): void {
+    const wrapper = this.shadow.querySelector('.ck-editable-array');
+    if (!wrapper) return;
+
+    const rowEl = wrapper.querySelector(
+      `[data-row-index="${index}"]`
+    ) as HTMLElement;
+    if (!rowEl) return;
+
+    if (isDeleted) {
+      rowEl.classList.add('ck-deleted');
+    } else {
+      rowEl.classList.remove('ck-deleted');
+    }
   }
 
   // Validate a row against the schema
