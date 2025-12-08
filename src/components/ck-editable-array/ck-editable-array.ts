@@ -186,6 +186,119 @@ export class CkEditableArray extends HTMLElement {
     this._redoStack = [];
   }
 
+  // FR-014: Move row up (swap with row above)
+  moveUp(index: number): void {
+    // Block if readonly or editing
+    if (this._readonly || this.getEditingRowIndex() !== -1) return;
+    // Can't move first row up
+    if (index <= 0 || index >= this._data.length) return;
+
+    // Swap with row above
+    const temp = this._data[index - 1];
+    this._data[index - 1] = this._data[index];
+    this._data[index] = temp;
+
+    // Dispatch reorder event
+    this.dispatchEvent(
+      new CustomEvent('reorder', {
+        bubbles: true,
+        detail: {
+          fromIndex: index,
+          toIndex: index - 1,
+          data: this.deepClone(this._data),
+        },
+      })
+    );
+
+    // Dispatch datachanged event
+    this.dispatchEvent(
+      new CustomEvent('datachanged', {
+        bubbles: true,
+        detail: { data: this.deepClone(this._data) },
+      })
+    );
+
+    this.render();
+  }
+
+  // FR-015: Move row down (swap with row below)
+  moveDown(index: number): void {
+    // Block if readonly or editing
+    if (this._readonly || this.getEditingRowIndex() !== -1) return;
+    // Can't move last row down
+    if (index < 0 || index >= this._data.length - 1) return;
+
+    // Swap with row below
+    const temp = this._data[index + 1];
+    this._data[index + 1] = this._data[index];
+    this._data[index] = temp;
+
+    // Dispatch reorder event
+    this.dispatchEvent(
+      new CustomEvent('reorder', {
+        bubbles: true,
+        detail: {
+          fromIndex: index,
+          toIndex: index + 1,
+          data: this.deepClone(this._data),
+        },
+      })
+    );
+
+    // Dispatch datachanged event
+    this.dispatchEvent(
+      new CustomEvent('datachanged', {
+        bubbles: true,
+        detail: { data: this.deepClone(this._data) },
+      })
+    );
+
+    this.render();
+  }
+
+  // FR-016: Move row to specific position
+  moveTo(fromIndex: number, toIndex: number): void {
+    // Block if readonly or editing
+    if (this._readonly || this.getEditingRowIndex() !== -1) return;
+    // Validate fromIndex
+    if (fromIndex < 0 || fromIndex >= this._data.length) return;
+
+    // Clamp toIndex to valid range
+    const clampedToIndex = Math.max(
+      0,
+      Math.min(toIndex, this._data.length - 1)
+    );
+
+    // No-op if moving to same position
+    if (fromIndex === clampedToIndex) return;
+
+    // Remove the item and insert at new position
+    const [item] = this._data.splice(fromIndex, 1);
+    this._data.splice(clampedToIndex, 0, item);
+
+    // Dispatch reorder event
+    this.dispatchEvent(
+      new CustomEvent('reorder', {
+        bubbles: true,
+        detail: {
+          fromIndex,
+          toIndex: clampedToIndex,
+          data: this.deepClone(this._data),
+        },
+      })
+    );
+
+    // Dispatch datachanged event
+    this.dispatchEvent(
+      new CustomEvent('datachanged', {
+        bubbles: true,
+        detail: { data: this.deepClone(this._data) },
+      })
+    );
+
+    this.render();
+  }
+
   private deepClone<T>(value: T): T {
     // Use structuredClone when available for broader type support
     try {
@@ -837,6 +950,12 @@ export class CkEditableArray extends HTMLElement {
       case 'restore':
         this.restoreRow(index);
         break;
+      case 'move-up':
+        this.moveUp(index);
+        break;
+      case 'move-down':
+        this.moveDown(index);
+        break;
       default:
         // Unknown action - silently ignore in production
         break;
@@ -1236,6 +1355,10 @@ export class CkEditableArray extends HTMLElement {
         return `Delete item ${itemNum}`;
       case 'restore':
         return `Restore item ${itemNum}`;
+      case 'move-up':
+        return `Move item ${itemNum} up`;
+      case 'move-down':
+        return `Move item ${itemNum} down`;
       default:
         return `${action} item ${itemNum}`;
     }
