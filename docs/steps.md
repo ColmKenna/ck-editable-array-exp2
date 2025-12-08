@@ -148,3 +148,25 @@ Notes:
   - Cached color validation
   - Minimal DOM manipulation on input changes
 - Performance characteristics verified through automated testing
+
+### 2025-12-08 - Phase 6: Selection & Batch Operations (FR-017)
+- RED: Ran existing tests/ck-editable-array/selection.test.ts. 15 tests failed as expected.
+- GREEN: Implemented selection features in ck-editable-array.ts:
+  - Added selectedIndices state.
+  - Implemented select, deselect, toggleSelection, selectAll, clearSelection.
+  - Implemented deleteSelected (soft delete) and bulkUpdate.
+  - Updated render to apply data-selected and aria-selected.
+- VERIFY: All 15 tests in selection.test.ts passed.
+
+
+### 2025-12-08 - Phase 7: Form Integration (FR-022 to FR-025a)
+- RED: Created tests/ck-editable-array/form-integration.test.ts with 13 tests.
+- GREEN: Implemented:
+  - value property with JSON stringification.
+  - toFormData() method recursively flattening data.
+  - Form Association via static properties and attachInternals.
+  - checkValidity() and reportValidity() with manual fallback for JSDOM.
+  - Form lifecycle callbacks (reset, disabled).
+- REFACTOR: Added safe access to ElementInternals methods.
+- VERIFY: All 13 tests in form-integration.test.ts passed.
+

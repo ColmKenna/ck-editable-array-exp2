@@ -20,7 +20,13 @@ const FORBIDDEN_PATHS = new Set([
 ]);
 
 export class CkEditableArray extends HTMLElement {
+  // FR-025a: Form Association
+  static get formAssociated() {
+    return true;
+  }
+
   private shadow: ShadowRoot;
+  private _internals: ElementInternals;
   private _data: Record<string, unknown>[] = [];
   private _rowStates: Map<number, RowState> = new Map();
   private _readonly = false;
@@ -362,6 +368,7 @@ export class CkEditableArray extends HTMLElement {
   constructor() {
     super();
     this.shadow = this.attachShadow({ mode: 'open' });
+    this._internals = this.attachInternals();
 
     const adopted = (
       this.shadow as unknown as ShadowRoot & {
@@ -507,6 +514,7 @@ export class CkEditableArray extends HTMLElement {
         detail: { data: this.deepClone(this._data) },
       })
     );
+    this.updateInternalsValidity();
     // Re-render as data changed
     this.render();
   }
@@ -698,6 +706,119 @@ export class CkEditableArray extends HTMLElement {
         detail: { selectedIndices: [...this._selectedIndices] },
       })
     );
+  }
+
+  // FR-022: Value property implementation
+  get value(): string {
+    return JSON.stringify(this.data);
+  }
+
+  set value(val: string) {
+    try {
+      const parsed = JSON.parse(val);
+      if (Array.isArray(parsed)) {
+        this.data = parsed;
+      } else {
+        this.data = [];
+      }
+    } catch {
+      this.data = [];
+    }
+  }
+
+  // FR-023: FormData integration
+  toFormData(): FormData {
+    const formData = new FormData();
+    const componentName = this.getAttribute('name') || 'items';
+
+    this._data.forEach((row, index) => {
+      this.flattenObject(row, `${componentName}[${index}]`, formData);
+    });
+
+    return formData;
+  }
+
+  private flattenObject(obj: Record<string, unknown>, prefix: string, formData: FormData): void {
+    for (const [key, value] of Object.entries(obj)) {
+      if (key.startsWith('__')) continue;
+      const fullKey = `${prefix}.${key}`;
+
+      if (value === null || value === undefined) {
+        continue;
+      } else if (Array.isArray(value)) {
+        formData.append(fullKey, (value as unknown[]).join(', '));
+      } else if (typeof value === 'object') {
+        this.flattenObject(value as Record<string, unknown>, fullKey, formData);
+      } else {
+        formData.append(fullKey, String(value));
+      }
+    }
+  }
+
+  // FR-024 & FR-025: Validity
+  checkValidity(): boolean {
+    if (this._internals?.checkValidity) {
+      return this._internals.checkValidity();
+    }
+    return this.performManualValidation();
+  }
+
+  reportValidity(): boolean {
+    if (this._internals?.reportValidity) {
+      return this._internals.reportValidity();
+    }
+    return this.performManualValidation();
+  }
+
+  private performManualValidation(): boolean {
+    if (Object.keys(this._validationSchema).length === 0) return true;
+
+    // Check all rows
+    for (let i = 0; i < this._data.length; i++) {
+      if (!this.validateRow(i).isValid) return false;
+    }
+    return true;
+  }
+
+  get validity(): ValidityState {
+    return this._internals.validity;
+  }
+
+  get validationMessage(): string {
+    return this._internals.validationMessage;
+  }
+
+  private updateInternalsValidity(): void {
+    if (!this._internals || typeof this._internals.setValidity !== 'function') return;
+
+    if (Object.keys(this._validationSchema).length === 0) {
+      this._internals.setValidity({});
+      return;
+    }
+
+    const invalidRows: number[] = [];
+    this._data.forEach((_, index) => {
+      const { isValid } = this.validateRow(index);
+      if (!isValid) invalidRows.push(index);
+    });
+
+    if (invalidRows.length > 0) {
+      this._internals.setValidity(
+        { customError: true },
+        `Rows ${invalidRows.map(i => i + 1).join(', ')} contain errors.`
+      );
+    } else {
+      this._internals.setValidity({});
+    }
+  }
+
+  // FR-025a: Form Lifecycle Callbacks
+  formResetCallback(): void {
+    this.data = [];
+  }
+
+  formDisabledCallback(disabled: boolean): void {
+    this.readonly = disabled;
   }
 
   // FR-002: Add a new row
@@ -1267,6 +1388,7 @@ export class CkEditableArray extends HTMLElement {
       }
       this._validationTimeout = setTimeout(() => {
         this.updateUiValidationState(index);
+        this.updateInternalsValidity();
         this._validationTimeout = null;
       }, 150);
     }
