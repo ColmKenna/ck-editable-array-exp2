@@ -1014,9 +1014,19 @@ export class CkEditableArray extends HTMLElement {
 
   // Update validation UI state for a row
   private updateUiValidationState(index: number): void {
-    const row = this.shadow.querySelector(
-      `[data-row-index="${index}"]`
-    ) as HTMLElement;
+    let row: HTMLElement | null = null;
+
+    // In modal mode, find the row in the modal; otherwise find in the wrapper
+    if (this._modalEdit && this._modalElement) {
+      row = this._modalElement.querySelector(
+        `[data-row-index="${index}"]`
+      ) as HTMLElement | null;
+    } else {
+      row = this.shadow.querySelector(
+        `[data-row-index="${index}"]`
+      ) as HTMLElement | null;
+    }
+
     if (row) {
       this.updateRowValidation(row, index);
     }

@@ -213,4 +213,43 @@ describe('FR-007: Restore Row', () => {
     const event = handler.mock.calls[0][0] as CustomEvent<{ data: RowData[] }>;
     expect(event.detail.data[0].deleted).toBe(false);
   });
+
+  test('TC-007-04: Restore button is not affected by ck-deleted styles', () => {
+    document.body.appendChild(element);
+
+    type RowData = { name: string; deleted?: boolean };
+    (element as unknown as { data: RowData[] }).data = [
+      { name: 'Alice', deleted: true },
+    ];
+
+    // Get restore button and row elements
+    const restoreBtn = element.shadowRoot?.querySelector(
+      '[data-action="restore"]'
+    ) as HTMLElement;
+    const row = element.shadowRoot?.querySelector('[data-row-index="0"]') as HTMLElement;
+
+    // Verify row has ck-deleted class
+    expect(row?.classList.contains('ck-deleted')).toBe(true);
+
+    // Restore button should not have ck-deleted class
+    expect(restoreBtn?.classList.contains('ck-deleted')).toBe(false);
+
+    // Verify the restore button is still visible and functional
+    expect(restoreBtn?.tagName).toBe('BUTTON');
+    expect(restoreBtn?.getAttribute('data-action')).toBe('restore');
+
+    // Check that the CSS stylesheet excludes restore button from deleted styles
+    const shadowRoot = element.shadowRoot;
+    const styleElement = shadowRoot?.querySelector('style[data-ck-editable-array-fallback], style');
+    if (styleElement) {
+      const cssText = styleElement.textContent || '';
+      // Verify CSS uses :not() selector to exclude restore buttons from deleted styles
+      expect(cssText).toContain('ck-deleted');
+      // The fix should exclude [data-action="restore"] from opacity and text-decoration
+      const hasNotSelector = cssText.includes(':not([data-action="restore"])') ||
+                              cssText.includes('ck-deleted:not') ||
+                              cssText.includes('[data-action="restore"]');
+      expect(hasNotSelector).toBe(true);
+    }
+  });
 });

@@ -344,14 +344,18 @@ select[aria-invalid="true"] {
 }
 
 /* --- Deleted Row Styles --- */
-.ck-deleted {
-  opacity: 0.6;
-  background: #fef2f2 !important;
-}
 
-.ck-deleted .row-item {
+.ck-deleted .row-item > *:not(.row-actions):not([data-action="restore"])  {
   text-decoration: line-through;
   color: #9ca3af;
+}
+
+/* Keep restore button readable when row is soft-deleted */
+.ck-deleted .row-item [data-action="restore"],
+.ck-deleted .row-item .btn-restore {
+  text-decoration: none;
+  opacity: 1;
+  color: #ffffff;
 }
 
 /* Hide delete button when row is deleted */

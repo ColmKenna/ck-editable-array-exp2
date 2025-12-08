@@ -66,10 +66,19 @@ export const ckEditableArrayCSS = `
   /* Add any specific modal row styles */
 }
 
-/* Soft deleted rows */
-.ck-deleted {
+/* Soft deleted rows - fade bound content only */
+.ck-deleted [data-bind] {
   opacity: 0.5;
   text-decoration: line-through;
+}
+
+/* Keep action areas fully readable */
+.ck-deleted [data-action],
+.ck-deleted button,
+.ck-deleted .row-actions,
+.ck-deleted .ck-actions {
+  opacity: 1;
+  text-decoration: none;
 }
 `;
 
