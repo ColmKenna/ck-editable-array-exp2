@@ -37,6 +37,12 @@ export class CkEditableArray extends HTMLElement {
   // Debounce timeout for validation
   private _validationTimeout: ReturnType<typeof setTimeout> | null = null;
 
+  // Undo/Redo history (FR-010, FR-011, FR-012, FR-013)
+  private _history: Record<string, unknown>[][] = [];
+  private _redoStack: Record<string, unknown>[][] = [];
+  private _maxHistorySize = 50;
+  private _skipHistoryPush = false;
+
   // Factory function for creating new items (FR-002)
   private _newItemFactory: () => Record<string, unknown> = () => ({});
 
@@ -87,6 +93,99 @@ export class CkEditableArray extends HTMLElement {
   ) {
     this._validationSchema = schema;
   }
+
+  // FR-010, FR-011: Undo/Redo properties
+  get canUndo(): boolean {
+    return this._history.length > 0;
+  }
+
+  get canRedo(): boolean {
+    return this._redoStack.length > 0;
+  }
+
+  // FR-012: Max history size property
+  get maxHistorySize(): number {
+    return this._maxHistorySize;
+  }
+
+  set maxHistorySize(value: number) {
+    this._maxHistorySize = Math.max(1, value);
+    // Trim history if needed
+    while (this._history.length > this._maxHistorySize) {
+      this._history.shift();
+    }
+  }
+
+  // FR-010: Undo - restore previous state
+  undo(): void {
+    if (!this.canUndo) return;
+
+    // Push current state to redo stack
+    this._redoStack.push(this.deepClone(this._data));
+
+    // Pop previous state from history
+    const previousState = this._history.pop()!;
+
+    // Restore state without pushing to history
+    this._skipHistoryPush = true;
+    this._data = this.deepClone(previousState);
+    this._skipHistoryPush = false;
+
+    // Dispatch events
+    this.dispatchEvent(
+      new CustomEvent('undo', {
+        bubbles: true,
+        detail: { data: this.deepClone(this._data) },
+      })
+    );
+    this.dispatchEvent(
+      new CustomEvent('datachanged', {
+        bubbles: true,
+        detail: { data: this.deepClone(this._data) },
+      })
+    );
+
+    this.render();
+  }
+
+  // FR-011: Redo - restore next state
+  redo(): void {
+    if (!this.canRedo) return;
+
+    // Push current state to history
+    this._history.push(this.deepClone(this._data));
+
+    // Pop next state from redo stack
+    const nextState = this._redoStack.pop()!;
+
+    // Restore state without pushing to history
+    this._skipHistoryPush = true;
+    this._data = this.deepClone(nextState);
+    this._skipHistoryPush = false;
+
+    // Dispatch events
+    this.dispatchEvent(
+      new CustomEvent('redo', {
+        bubbles: true,
+        detail: { data: this.deepClone(this._data) },
+      })
+    );
+    this.dispatchEvent(
+      new CustomEvent('datachanged', {
+        bubbles: true,
+        detail: { data: this.deepClone(this._data) },
+      })
+    );
+
+    this.render();
+  }
+
+  // FR-013: Clear history
+  clearHistory(): void {
+    this._history = [];
+    this._redoStack = [];
+  }
+
   private deepClone<T>(value: T): T {
     // Use structuredClone when available for broader type support
     try {
@@ -268,6 +367,18 @@ export class CkEditableArray extends HTMLElement {
       );
       return;
     }
+
+    // Push current state to history (FR-010, FR-012)
+    if (!this._skipHistoryPush && this._data.length > 0) {
+      this._history.push(this.deepClone(this._data));
+      // Clear redo stack on new change
+      this._redoStack = [];
+      // Trim history if exceeds max size
+      while (this._history.length > this._maxHistorySize) {
+        this._history.shift();
+      }
+    }
+
     this._data = this.deepClone(value) as Record<string, unknown>[];
     // Dispatch datachanged event with cloned data
     this.dispatchEvent(
