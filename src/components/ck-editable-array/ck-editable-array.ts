@@ -1672,30 +1672,39 @@ export class CkEditableArray extends HTMLElement {
         // Clear modal content
         modalContent.innerHTML = '';
 
-        // Get row data
-        const rowData = this._data[editingIndex];
+        // FR-029: Render hidden edit inputs for all rows (for form submission)
+        // This allows forms to include all row data even if not being edited
+        for (let i = 0; i < this._data.length; i++) {
+          const rowData = this._data[i];
+          const isEditingRow = i === editingIndex;
 
-        // Clone edit template
-        const clone = this._editTemplate.content.cloneNode(
-          true
-        ) as DocumentFragment;
+          // Clone edit template
+          const clone = this._editTemplate.content.cloneNode(
+            true
+          ) as DocumentFragment;
 
-        // Create row wrapper for modal with data-row-index
-        const modalRowEl = document.createElement('div');
-        modalRowEl.setAttribute('data-row-index', String(editingIndex));
-        modalRowEl.className = 'ck-modal__row';
+          // Create row wrapper for modal with data-row-index
+          const modalRowEl = document.createElement('div');
+          modalRowEl.setAttribute('data-row-index', String(i));
+          modalRowEl.className = 'ck-modal__row';
 
-        // Bind data to elements (DRY: extracted to bindElementData)
-        this.bindElementData(clone, rowData, editingIndex, componentName);
+          // Hide non-editing rows with ck-hidden class
+          if (!isEditingRow) {
+            modalRowEl.classList.add('ck-hidden');
+          }
 
-        modalRowEl.appendChild(clone);
+          // Bind data to elements (DRY: extracted to bindElementData)
+          this.bindElementData(clone, rowData, i, componentName);
 
-        // Apply validation if needed
-        if (Object.keys(this._validationSchema).length > 0) {
-          this.updateRowValidation(modalRowEl, editingIndex);
+          modalRowEl.appendChild(clone);
+
+          // Apply validation if needed
+          if (Object.keys(this._validationSchema).length > 0) {
+            this.updateRowValidation(modalRowEl, i);
+          }
+
+          modalContent.appendChild(modalRowEl);
         }
-
-        modalContent.appendChild(modalRowEl);
 
         // Show modal
         modal.classList.remove('ck-hidden');

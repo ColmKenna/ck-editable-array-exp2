@@ -119,3 +119,104 @@ Verified through automated testing:
 - Consider adding a `dataImmutable` property to toggle cloning behavior for advanced use cases.
 - Validation error display (FR-019, FR-020) not yet implemented.
 - History/undo-redo performance (NFR-P-002) to be validated when Phase 4 is implemented.
+
+## Modal Edit Mode (FR-026, FR-027, FR-028, FR-029)
+
+### Overview
+
+Modal edit mode allows editing a single row at a time in a modal dialog instead of inline.
+
+### FR-029: Hidden Row Edits for Form Submission
+
+When `modalEdit` is enabled, the modal renders edit templates for ALL rows:
+- **Visible Row:** The currently editing row is visible (no `ck-hidden` class)
+- **Hidden Rows:** Non-editing rows have `ck-hidden` class (display: none via CSS)
+- **Input Binding:** All hidden inputs are still bound to row data and can be modified
+- **Form Submission:** `toFormData()` includes all rows, not just the editing row
+- **Validation:** Validation applies to both visible and hidden rows
+
+### Implementation Details
+
+```typescript
+// Modal rendering loop (lines ~1677-1707)
+for (let i = 0; i < this._data.length; i++) {
+  const rowData = this._data[i];
+  const isEditingRow = i === editingIndex;
+
+  // Clone and bind edit template
+  const clone = this._editTemplate.content.cloneNode(true) as DocumentFragment;
+  const modalRowEl = document.createElement('div');
+  modalRowEl.setAttribute('data-row-index', String(i));
+  
+  // Hide non-editing rows
+  if (!isEditingRow) {
+    modalRowEl.classList.add('ck-hidden');
+  }
+
+  // Bind data (works for both visible and hidden rows)
+  this.bindElementData(clone, rowData, i, componentName);
+  
+  // Apply validation to hidden rows too
+  if (Object.keys(this._validationSchema).length > 0) {
+    this.updateRowValidation(modalRowEl, i);
+  }
+}
+```
+
+### Benefits
+
+1. **Form Completeness:** Forms that wrap the component can access all row data via `toFormData()`
+2. **No Data Loss:** Hidden inputs prevent accidental loss of row data during form submission
+3. **Transparent Validation:** Hidden rows are validated just like visible ones
+4. **User Simplicity:** Users only see and edit one row at a time, simplifying UI
+
+### Usage Example
+
+```html
+<form id="myForm">
+  <ck-editable-array modal-edit>
+    <template data-slot="display">
+      <span data-bind="name"></span>
+      <button data-action="toggle">Edit</button>
+    </template>
+    <template data-slot="edit">
+      <input data-bind="name" type="text" required />
+      <input data-bind="email" type="email" required />
+      <button data-action="save">Save</button>
+      <button data-action="cancel">Cancel</button>
+    </template>
+  </ck-editable-array>
+  <button type="submit">Submit All</button>
+</form>
+
+<script>
+const form = document.getElementById('myForm');
+form.addEventListener('submit', (e) => {
+  e.preventDefault();
+  
+  const array = form.querySelector('ck-editable-array');
+  // FormData now includes all rows, even those not being edited
+  const formData = array.toFormData();
+  
+  // Submit to server
+  fetch('/api/items', {
+    method: 'POST',
+    body: formData
+  });
+});
+</script>
+```
+
+#### CSS for Hidden Rows
+
+The component includes a `ck-hidden` CSS class for display: none:
+
+```css
+.ck-hidden {
+  display: none;
+}
+```
+
+This can be customized via CSS custom properties if needed in the component's stylesheet.
+
+

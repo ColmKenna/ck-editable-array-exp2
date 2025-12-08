@@ -607,3 +607,197 @@ describe('FR-028: Modal Validation Failure Indication', () => {
     expect(modalRowEl?.getAttribute('data-row-invalid')).toBe('true');
   });
 });
+
+describe('FR-029: Modal Hidden Row Edits for Form Submission', () => {
+  let element: CkEditableArray;
+
+  beforeEach(() => {
+    element = document.createElement('ck-editable-array') as CkEditableArray;
+    element.innerHTML = `
+      <template data-slot="display">
+        <span data-bind="name"></span>
+        <span data-bind="email"></span>
+        <button data-action="toggle">Edit</button>
+      </template>
+      <template data-slot="edit">
+        <input data-bind="name" type="text" />
+        <input data-bind="email" type="email" />
+        <button data-action="save">Save</button>
+        <button data-action="cancel">Cancel</button>
+      </template>
+    `;
+  });
+
+  afterEach(() => {
+    element.remove();
+  });
+
+  test('TC-029-01: Modal mode renders hidden edit inputs for all rows', () => {
+    document.body.appendChild(element);
+
+    (element as unknown as { modalEdit: boolean }).modalEdit = true;
+
+    type RowData = { name: string; email: string };
+    (element as unknown as { data: RowData[] }).data = [
+      { name: 'Alice', email: 'alice@example.com' },
+      { name: 'Bob', email: 'bob@example.com' },
+      { name: 'Charlie', email: 'charlie@example.com' },
+    ];
+
+    // Click to edit row 0
+    const toggleBtn = element.shadowRoot?.querySelector(
+      '[data-action="toggle"]'
+    ) as HTMLElement;
+    toggleBtn?.click();
+
+    const modal = element.shadowRoot?.querySelector('.ck-modal') as HTMLElement;
+
+    // Modal should have input for each row (3 rows total)
+    // Only one row should be visible (editing row 0)
+    const allInputs = modal?.querySelectorAll(
+      'input[data-bind="name"]'
+    ) as NodeListOf<HTMLElement>;
+    expect(allInputs.length).toBe(3);
+
+    // Check that rows 1 and 2 are hidden
+    const row1 = modal?.querySelector('[data-row-index="1"]') as HTMLElement;
+    const row2 = modal?.querySelector('[data-row-index="2"]') as HTMLElement;
+
+    expect(row1?.classList.contains('ck-hidden')).toBe(true);
+    expect(row2?.classList.contains('ck-hidden')).toBe(true);
+  });
+
+  test('TC-029-02: Hidden rows in modal preserve all field values', () => {
+    document.body.appendChild(element);
+
+    (element as unknown as { modalEdit: boolean }).modalEdit = true;
+
+    type RowData = { name: string; email: string };
+    (element as unknown as { data: RowData[] }).data = [
+      { name: 'Alice', email: 'alice@example.com' },
+      { name: 'Bob', email: 'bob@example.com' },
+    ];
+
+    // Edit row 0
+    const toggleBtn = element.shadowRoot?.querySelector(
+      '[data-action="toggle"]'
+    ) as HTMLElement;
+    toggleBtn?.click();
+
+    const modal = element.shadowRoot?.querySelector('.ck-modal') as HTMLElement;
+
+    // Get all name inputs
+    const nameInputs = modal?.querySelectorAll(
+      'input[data-bind="name"]'
+    ) as NodeListOf<HTMLInputElement>;
+
+    // Row 0 (visible) should have Alice
+    expect(nameInputs[0]?.value).toBe('Alice');
+
+    // Row 1 (hidden) should have Bob
+    expect(nameInputs[1]?.value).toBe('Bob');
+  });
+
+  test('TC-029-03: Changes to hidden rows are preserved in data', () => {
+    document.body.appendChild(element);
+
+    (element as unknown as { modalEdit: boolean }).modalEdit = true;
+
+    type RowData = { name: string; email: string };
+    (element as unknown as { data: RowData[] }).data = [
+      { name: 'Alice', email: 'alice@example.com' },
+      { name: 'Bob', email: 'bob@example.com' },
+    ];
+
+    // Edit row 0
+    const toggleBtn = element.shadowRoot?.querySelector(
+      '[data-action="toggle"]'
+    ) as HTMLElement;
+    toggleBtn?.click();
+
+    const modal = element.shadowRoot?.querySelector('.ck-modal') as HTMLElement;
+
+    // Find hidden row 1's input and change it
+    const allNameInputs = modal?.querySelectorAll(
+      'input[data-bind="name"]'
+    ) as NodeListOf<HTMLInputElement>;
+
+    // Row 1 is the second input
+    const row1NameInput = allNameInputs[1] as HTMLInputElement;
+    expect(row1NameInput?.closest('[data-row-index]')?.getAttribute('data-row-index')).toBe('1');
+
+    // Change the hidden row's value
+    row1NameInput.value = 'Bobby';
+    row1NameInput.dispatchEvent(new Event('input', { bubbles: true }));
+
+    // Get current data
+    type DataType = { name: string; email: string };
+    const currentData = (element as unknown as { data: DataType[] }).data;
+
+    // Row 1 should have been updated
+    expect(currentData[1]?.name).toBe('Bobby');
+  });
+
+  test('TC-029-04: Form submission includes hidden row inputs', () => {
+    document.body.appendChild(element);
+
+    (element as unknown as { modalEdit: boolean }).modalEdit = true;
+
+    type RowData = { name: string; email: string };
+    (element as unknown as { data: RowData[] }).data = [
+      { name: 'Alice', email: 'alice@example.com' },
+      { name: 'Bob', email: 'bob@example.com' },
+    ];
+
+    // Edit row 0
+    const toggleBtn = element.shadowRoot?.querySelector(
+      '[data-action="toggle"]'
+    ) as HTMLElement;
+    toggleBtn?.click();
+
+    const modal = element.shadowRoot?.querySelector('.ck-modal') as HTMLElement;
+
+    // Get form data
+    const formData = (element as unknown as { toFormData: () => FormData }).toFormData();
+
+    // FormData should contain entries for both rows
+    const entries = Array.from(formData.entries());
+
+    // Check that we have entries for both rows
+    const row0Entries = entries.filter(([key]) => key.includes('[0]'));
+    const row1Entries = entries.filter(([key]) => key.includes('[1]'));
+
+    expect(row0Entries.length).toBeGreaterThan(0);
+    expect(row1Entries.length).toBeGreaterThan(0);
+  });
+
+  test('TC-029-05: Only editing row is visible, others have ck-hidden class', () => {
+    document.body.appendChild(element);
+
+    (element as unknown as { modalEdit: boolean }).modalEdit = true;
+
+    type RowData = { name: string; email: string };
+    (element as unknown as { data: RowData[] }).data = [
+      { name: 'Alice', email: 'alice@example.com' },
+      { name: 'Bob', email: 'bob@example.com' },
+      { name: 'Charlie', email: 'charlie@example.com' },
+    ];
+
+    // Edit row 1 (not row 0)
+    const toggleBtns = element.shadowRoot?.querySelectorAll(
+      '[data-action="toggle"]'
+    ) as NodeListOf<HTMLElement>;
+    (toggleBtns[1] as HTMLElement)?.click();
+
+    const modal = element.shadowRoot?.querySelector('.ck-modal') as HTMLElement;
+
+    // Row 0 and 2 should be hidden
+    const row0 = modal?.querySelector('[data-row-index="0"]') as HTMLElement;
+    const row1 = modal?.querySelector('[data-row-index="1"]') as HTMLElement;
+    const row2 = modal?.querySelector('[data-row-index="2"]') as HTMLElement;
+
+    expect(row0?.classList.contains('ck-hidden')).toBe(true);
+    expect(row1?.classList.contains('ck-hidden')).toBe(false);
+    expect(row2?.classList.contains('ck-hidden')).toBe(true);
+  });
+});

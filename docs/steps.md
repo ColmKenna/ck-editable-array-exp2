@@ -194,3 +194,102 @@ Notes:
 - **Performance**: No negative impact - reuses existing validation infrastructure with same debounce timing.
 - **Backward Compatibility**: Fully backward compatible - only affects modal validation, inline mode unaffected.
 
+---
+
+### 2025-12-08 - Phase 13: Modal Hidden Row Edits for Form Submission (FR-029)
+
+#### Context
+User requirement: "even in modal mode there should be edits on each row (even if they are hidden) as they may be needed for forms"
+
+This ensures that when using modal edit mode, all rows have hidden edit templates rendered in the modal, allowing:
+1. Form submission via FormData to include all row data
+2. Forms can access all row values without manual state management
+3. Hidden inputs preserve data that wasn't interactively edited
+
+#### Cycle: Modal Hidden Row Edits (FR-029)
+- **Baseline**: 158 passing tests across 16 test suites, all green
+- **RED**: Added 5 new failing tests in `tests/ck-editable-array/modal-edit.test.ts`:
+  - TC-029-01: Modal mode renders hidden edit inputs for all rows (expected 3 inputs, got 1)
+  - TC-029-02: Hidden rows in modal preserve all field values (expected "Bob", got undefined)
+  - TC-029-03: Changes to hidden rows are preserved in data (no second input found)
+  - TC-029-04: Form submission includes hidden row inputs (no rows in FormData)
+  - TC-029-05: Only editing row is visible, others have ck-hidden class (row1 and row2 not found)
+
+- **Analysis**: Current implementation only renders the currently editing row in the modal. Hidden rows are not rendered at all, so they cannot be accessed or updated.
+
+- **GREEN**: Modified modal rendering logic in `src/components/ck-editable-array/ck-editable-array.ts` (lines ~1668-1715):
+  - Changed from single-row rendering to loop over all rows in data array
+  - Each row gets its own div with `data-row-index` attribute
+  - Only editing row is visible (no `ck-hidden` class)
+  - Non-editing rows have `ck-hidden` class (display: none)
+  - All rows' inputs are bound to their respective row data
+  - All rows have validation applied
+
+```typescript
+// FR-029: Render hidden edit inputs for all rows (for form submission)
+for (let i = 0; i < this._data.length; i++) {
+  const rowData = this._data[i];
+  const isEditingRow = i === editingIndex;
+
+  // Clone edit template
+  const clone = this._editTemplate.content.cloneNode(true) as DocumentFragment;
+
+  // Create row wrapper for modal with data-row-index
+  const modalRowEl = document.createElement('div');
+  modalRowEl.setAttribute('data-row-index', String(i));
+  modalRowEl.className = 'ck-modal__row';
+
+  // Hide non-editing rows with ck-hidden class
+  if (!isEditingRow) {
+    modalRowEl.classList.add('ck-hidden');
+  }
+
+  // Bind data to elements
+  this.bindElementData(clone, rowData, i, componentName);
+
+  modalRowEl.appendChild(clone);
+
+  // Apply validation if needed
+  if (Object.keys(this._validationSchema).length > 0) {
+    this.updateRowValidation(modalRowEl, i);
+  }
+
+  modalContent.appendChild(modalRowEl);
+}
+```
+
+- **VERIFY**: All 5 new tests passing + all 158 existing tests still passing = 163 total tests passing
+  - No regressions detected
+  - Modal-edit test suite: 21/21 passing (17 existing + 5 new)
+  - All other test suites: unchanged
+
+- **Result**: Hidden row edits now working:
+  - All rows rendered in modal with edit templates
+  - Only editing row visible, others hidden with `ck-hidden` class
+  - Hidden inputs can be modified (change events trigger data updates)
+  - Form submission via `toFormData()` includes all rows
+  - Validation applies to both visible and hidden rows
+
+- **Benefits**:
+  - Forms can now access complete row data for submission
+  - No data loss for unedited rows
+  - User still sees only one row at a time (simplified UI)
+  - Hidden inputs preserve values for form POST/submission
+
+- **REFACTOR**: No additional refactoring needed - change is minimal and focused
+  - Reuses existing `bindElementData()` method
+  - Reuses existing `updateRowValidation()` method
+  - Reuses existing `handleWrapperInput` event handler
+  - No changes to event handlers or validation logic
+
+- **Documentation**:
+  - Updated `docs/readme.technical.md` with FR-029 implementation details
+  - Added example showing form submission with hidden rows
+  - Added CSS reference for `ck-hidden` class
+  - Created checkpoint file: `docs/checkpoint-2025-12-08-phase-13.md`
+
+- **Backward Compatibility**: Fully backward compatible
+  - Existing modal edit behavior unchanged (toggle, save, cancel, overlay)
+  - Only enhancement: hidden rows now included in data
+  - No breaking changes to API or events
+
