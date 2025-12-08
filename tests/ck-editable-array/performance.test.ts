@@ -112,6 +112,39 @@ describe('ck-editable-array - Performance (Phase 12)', () => {
     });
   });
 
+  describe('NFR-P-002: History Memory Management', () => {
+    test('TC-P-002-01: History bounded by maxHistorySize', () => {
+      // This test verifies that the history doesn't grow unbounded,
+      // which would cause memory leaks with frequent edits.
+      // It's a performance concern because unbounded history accumulation
+      // would slow down the component over time.
+
+      setupElement();
+
+      // Set a small history size for testing
+      (element as any).maxHistorySize = 5;
+
+      // Make 10 data changes (exceeds maxHistorySize)
+      for (let i = 0; i < 10; i++) {
+        element.data = [{ name: `User ${i}`, email: `user${i}@test.com` }];
+      }
+
+      // Count how many undo operations we can perform
+      let undoCount = 0;
+      while ((element as any).canUndo) {
+        (element as any).undo();
+        undoCount++;
+        // Safety limit to prevent infinite loop
+        if (undoCount > 10) break;
+      }
+
+      // We should be able to undo at most maxHistorySize times
+      // (actually maxHistorySize - 1 because current state isn't in history)
+      expect(undoCount).toBeLessThanOrEqual(5);
+      expect(undoCount).toBeGreaterThan(0); // Should have some history
+    });
+  });
+
   describe('NFR-P-003: Initial Render Performance', () => {
     test('TC-P-003-01: 100 rows should render in < 100ms', () => {
       // RED: This test verifies that the component can render a large dataset

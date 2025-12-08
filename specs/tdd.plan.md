@@ -259,10 +259,10 @@ tests/
 
 | Done | Test Case ID | FR | Description | Test File |
 |------|--------------|----|----|------------|
-| [ ] | TC-021-01 | FR-021 | i18n messages used for required | validation.test.ts |
-| [ ] | TC-021-02 | FR-021 | i18n messages used for minLength | validation.test.ts |
-| [ ] | TC-021-03 | FR-021 | i18n messages used for maxLength | validation.test.ts |
-| [ ] | TC-021-04 | FR-021 | i18n messages used for pattern | validation.test.ts |
+| [x] | TC-021-01 | FR-021 | i18n messages used for required | validation.test.ts |
+| [x] | TC-021-02 | FR-021 | i18n messages used for minLength | validation.test.ts |
+| [x] | TC-021-03 | FR-021 | i18n messages used for maxLength | validation.test.ts |
+| [x] | TC-021-04 | FR-021 | i18n messages used for pattern | validation.test.ts |
 
 ### Phase 10: Error Handling (Should-have)
 **Priority**: Should-have
