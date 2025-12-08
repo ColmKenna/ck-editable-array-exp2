@@ -651,7 +651,7 @@ export class CkEditableArray extends HTMLElement {
     this._selectedIndices.sort((a, b) => a - b);
 
     this.dispatchSelectionChanged();
-    this.render();
+    this.updateRowSelectionState(index);
   }
 
   // Deselect a row
@@ -661,7 +661,7 @@ export class CkEditableArray extends HTMLElement {
 
     this._selectedIndices.splice(pos, 1);
     this.dispatchSelectionChanged();
-    this.render();
+    this.updateRowSelectionState(index);
   }
 
   // Toggle selection
@@ -977,6 +977,25 @@ export class CkEditableArray extends HTMLElement {
       rowEl.classList.add('ck-deleted');
     } else {
       rowEl.classList.remove('ck-deleted');
+    }
+  }
+
+  // Update row's selection state without full re-render
+  private updateRowSelectionState(index: number): void {
+    const wrapper = this.shadow.querySelector('.ck-editable-array');
+    if (!wrapper) return;
+
+    const rowEl = wrapper.querySelector(
+      `[data-row-index="${index}"]`
+    ) as HTMLElement;
+    if (!rowEl) return;
+
+    if (this.isSelected(index)) {
+      rowEl.setAttribute('data-selected', 'true');
+      rowEl.setAttribute('aria-selected', 'true');
+    } else {
+      rowEl.removeAttribute('data-selected');
+      rowEl.removeAttribute('aria-selected');
     }
   }
 
