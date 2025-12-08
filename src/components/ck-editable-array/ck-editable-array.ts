@@ -1523,12 +1523,8 @@ export class CkEditableArray extends HTMLElement {
     }
   };
 
-  private render() {
-    try {
-      // Guard: don't render if not connected to DOM
-      if (!this.isConnected) return;
-
-    // Ensure fallback style exists without being wiped by later DOM updates
+  // Helper: Ensure fallback styles are applied
+  private ensureFallbackStyles(): void {
     if (
       !ckEditableArraySheet &&
       !this.shadow.querySelector('style[data-ck-editable-array-fallback]')
@@ -1538,8 +1534,10 @@ export class CkEditableArray extends HTMLElement {
       style.textContent = ckEditableArrayCSS;
       this.shadow.appendChild(style);
     }
+  }
 
-    // Keep or create a single root wrapper to avoid wiping style nodes
+  // Helper: Ensure and return wrapper element
+  private ensureWrapper(): HTMLElement {
     let wrapper = this.shadow.querySelector(
       '.ck-editable-array'
     ) as HTMLElement | null;
@@ -1554,186 +1552,207 @@ export class CkEditableArray extends HTMLElement {
       wrapper.addEventListener('input', this.handleWrapperInput);
       this.shadow.appendChild(wrapper);
     }
+    return wrapper;
+  }
 
-    // Apply per-instance color via CSS custom property
-    const sanitizedColor = this.getSanitizedColor(this.color);
-    this.style.setProperty('--ck-editable-array-color', sanitizedColor);
+  // Helper: Render a single row element
+  private renderRow(
+    rowData: Record<string, unknown>,
+    index: number,
+    componentName: string
+  ): HTMLElement {
+    const state = this._rowStates.get(index);
+    const isEditing = state?.editing ?? false;
+    const isDeleted = rowData.deleted === true;
 
-    // Clear wrapper content but leave other nodes (like style) intact
-    wrapper.innerHTML = '';
+    // Create row container with ARIA listitem role
+    const rowEl = document.createElement('div');
+    rowEl.setAttribute('data-row-index', String(index));
+    rowEl.setAttribute('role', 'listitem');
+    rowEl.setAttribute('aria-label', `Item ${index + 1}`);
+    rowEl.className = 'ck-editable-array__row';
 
-    // Create or get modal element if in modal mode
-    let modal: HTMLElement | null = null;
-    if (this._modalEdit) {
-      // Use cached reference or query if not yet cached
-      if (!this._modalElement) {
-        this._modalElement = this.shadow.querySelector(
-          '.ck-modal'
-        ) as HTMLElement | null;
-      }
-
-      modal = this._modalElement;
-
-      if (!modal) {
-        modal = document.createElement('div');
-        modal.className = 'ck-modal ck-hidden';
-        modal.setAttribute('role', 'dialog');
-        modal.setAttribute('aria-modal', 'true');
-        modal.setAttribute('aria-hidden', 'true');
-
-        // Create modal content wrapper
-        const modalContent = document.createElement('div');
-        modalContent.className = 'ck-modal__content';
-        modal.appendChild(modalContent);
-
-        // Add event listeners only when creating modal (not on every render)
-        modal.addEventListener('click', this.handleModalClick);
-        modal.addEventListener('click', this.handleWrapperClick);
-        modal.addEventListener('input', this.handleWrapperInput);
-
-        this.shadow.appendChild(modal);
-
-        // Cache the modal reference
-        this._modalElement = modal;
-      }
+    // FR-017: Selection attributes
+    if (this.isSelected(index)) {
+      rowEl.setAttribute('data-selected', 'true');
+      rowEl.setAttribute('aria-selected', 'true');
     }
 
-    // Cache templates on first render
-    this.initTemplates();
-
-    // If no templates, render default message
-    if (!this._displayTemplate) {
-      const heading = document.createElement('h1');
-      heading.className = 'ck-editable-array__message';
-      heading.textContent = `Hello, ${this.name}!`;
-      heading.style.color = sanitizedColor;
-
-      const subtitle = document.createElement('p');
-      subtitle.className = 'ck-editable-array__subtitle';
-      subtitle.textContent = 'Welcome to our Web Component Library';
-
-      wrapper.appendChild(heading);
-      wrapper.appendChild(subtitle);
-      return;
+    // Add ck-deleted class for soft-deleted rows
+    if (isDeleted) {
+      rowEl.classList.add('ck-deleted');
     }
 
-    // Render rows from data
+    // Determine which template to use
+    // In modal mode, always use display template for inline row
+    const templateToUse =
+      isEditing && this._editTemplate && !this._modalEdit
+        ? this._editTemplate
+        : this._displayTemplate;
+    // Skip if no template (should not happen at this point, but guard for TypeScript)
+    if (!templateToUse) return rowEl;
+    const clone = templateToUse.content.cloneNode(true) as DocumentFragment;
+
+    // Bind data to elements (DRY: extracted to bindElementData)
+    this.bindElementData(clone, rowData, index, componentName);
+
+    // Add toggle button if in display mode and no explicit toggle
+    if (!isEditing && !clone.querySelector('[data-action="toggle"]')) {
+      const toggleBtn = document.createElement('button');
+      toggleBtn.setAttribute('data-action', 'toggle');
+      toggleBtn.setAttribute('aria-label', `Edit item ${index + 1}`);
+      toggleBtn.textContent = 'Edit';
+      rowEl.appendChild(toggleBtn);
+    }
+
+    rowEl.appendChild(clone);
+
+    // Initial validation state update
+    if (isEditing && Object.keys(this._validationSchema).length > 0) {
+      this.updateRowValidation(rowEl, index);
+    }
+
+    return rowEl;
+  }
+
+  // Helper: Render modal content
+  private renderModal(modal: HTMLElement, editingIndex: number): void {
+    const modalContent = modal.querySelector('.ck-modal__content');
     const componentName = this.getAttribute('name') || 'items';
-    this._data.forEach((rowData, index) => {
-      const state = this._rowStates.get(index);
-      const isEditing = state?.editing ?? false;
-      const isDeleted = rowData.deleted === true;
 
-      // Create row container with ARIA listitem role
-      const rowEl = document.createElement('div');
-      rowEl.setAttribute('data-row-index', String(index));
-      rowEl.setAttribute('role', 'listitem');
-      rowEl.setAttribute('aria-label', `Item ${index + 1}`);
-      rowEl.className = 'ck-editable-array__row';
+    if (editingIndex !== -1 && modalContent && this._editTemplate) {
+      // Clear modal content
+      modalContent.innerHTML = '';
 
-      // FR-017: Selection attributes
-      if (this.isSelected(index)) {
-        rowEl.setAttribute('data-selected', 'true');
-        rowEl.setAttribute('aria-selected', 'true');
-      }
+      // FR-029: Render hidden edit inputs for all rows (for form submission)
+      // This allows forms to include all row data even if not being edited
+      for (let i = 0; i < this._data.length; i++) {
+        const rowData = this._data[i];
+        const isEditingRow = i === editingIndex;
 
-      // Add ck-deleted class for soft-deleted rows
-      if (isDeleted) {
-        rowEl.classList.add('ck-deleted');
-      }
+        // Clone edit template
+        const clone = this._editTemplate.content.cloneNode(
+          true
+        ) as DocumentFragment;
 
-      // Determine which template to use
-      // In modal mode, always use display template for inline row
-      const templateToUse =
-        isEditing && this._editTemplate && !this._modalEdit
-          ? this._editTemplate
-          : this._displayTemplate;
-      // Skip if no template (should not happen at this point, but guard for TypeScript)
-      if (!templateToUse) return;
-      const clone = templateToUse.content.cloneNode(true) as DocumentFragment;
+        // Create row wrapper for modal with data-row-index
+        const modalRowEl = document.createElement('div');
+        modalRowEl.setAttribute('data-row-index', String(i));
+        modalRowEl.className = 'ck-modal__row';
 
-      // Bind data to elements (DRY: extracted to bindElementData)
-      this.bindElementData(clone, rowData, index, componentName);
-
-      // strict validation check for save button in edit mode
-      if (isEditing && Object.keys(this._validationSchema).length > 0) {
-        // Apply validation UI state to the new row element
-        // We need to wait until clone is appended to rowEl so we can query it?
-        // rowEl already has clone appended by next lines? No.
-        // Let's append clone first, then update.
-      }
-
-      // Add toggle button if in display mode and no explicit toggle
-      if (!isEditing && !clone.querySelector('[data-action="toggle"]')) {
-        const toggleBtn = document.createElement('button');
-        toggleBtn.setAttribute('data-action', 'toggle');
-        toggleBtn.setAttribute('aria-label', `Edit item ${index + 1}`);
-        toggleBtn.textContent = 'Edit';
-        rowEl.appendChild(toggleBtn);
-      }
-
-      rowEl.appendChild(clone);
-
-      // Initial validation state update
-      if (isEditing && Object.keys(this._validationSchema).length > 0) {
-        this.updateRowValidation(rowEl, index);
-      }
-
-      wrapper!.appendChild(rowEl);
-    });
-
-    // Handle modal rendering if in modal edit mode
-    if (this._modalEdit && modal) {
-      const editingIndex = this.getEditingRowIndex();
-      const modalContent = modal.querySelector('.ck-modal__content');
-
-      if (editingIndex !== -1 && modalContent && this._editTemplate) {
-        // Clear modal content
-        modalContent.innerHTML = '';
-
-        // FR-029: Render hidden edit inputs for all rows (for form submission)
-        // This allows forms to include all row data even if not being edited
-        for (let i = 0; i < this._data.length; i++) {
-          const rowData = this._data[i];
-          const isEditingRow = i === editingIndex;
-
-          // Clone edit template
-          const clone = this._editTemplate.content.cloneNode(
-            true
-          ) as DocumentFragment;
-
-          // Create row wrapper for modal with data-row-index
-          const modalRowEl = document.createElement('div');
-          modalRowEl.setAttribute('data-row-index', String(i));
-          modalRowEl.className = 'ck-modal__row';
-
-          // Hide non-editing rows with ck-hidden class
-          if (!isEditingRow) {
-            modalRowEl.classList.add('ck-hidden');
-          }
-
-          // Bind data to elements (DRY: extracted to bindElementData)
-          this.bindElementData(clone, rowData, i, componentName);
-
-          modalRowEl.appendChild(clone);
-
-          // Apply validation if needed
-          if (Object.keys(this._validationSchema).length > 0) {
-            this.updateRowValidation(modalRowEl, i);
-          }
-
-          modalContent.appendChild(modalRowEl);
+        // Hide non-editing rows with ck-hidden class
+        if (!isEditingRow) {
+          modalRowEl.classList.add('ck-hidden');
         }
 
-        // Show modal
-        modal.classList.remove('ck-hidden');
-        modal.setAttribute('aria-hidden', 'false');
-      } else {
-        // Hide modal if no row is being edited
-        modal.classList.add('ck-hidden');
-        modal.setAttribute('aria-hidden', 'true');
+        // Bind data to elements (DRY: extracted to bindElementData)
+        this.bindElementData(clone, rowData, i, componentName);
+
+        modalRowEl.appendChild(clone);
+
+        // Apply validation if needed
+        if (Object.keys(this._validationSchema).length > 0) {
+          this.updateRowValidation(modalRowEl, i);
+        }
+
+        modalContent.appendChild(modalRowEl);
       }
+
+      // Show modal
+      modal.classList.remove('ck-hidden');
+      modal.setAttribute('aria-hidden', 'false');
+    } else {
+      // Hide modal if no row is being edited
+      modal.classList.add('ck-hidden');
+      modal.setAttribute('aria-hidden', 'true');
     }
+  }
+
+  private render() {
+    try {
+      // Guard: don't render if not connected to DOM
+      if (!this.isConnected) return;
+
+      // Ensure fallback styles are applied
+      this.ensureFallbackStyles();
+
+      // Get or create wrapper element
+      const wrapper = this.ensureWrapper();
+
+      // Apply per-instance color via CSS custom property
+      const sanitizedColor = this.getSanitizedColor(this.color);
+      this.style.setProperty('--ck-editable-array-color', sanitizedColor);
+
+      // Clear wrapper content but leave other nodes (like style) intact
+      wrapper.innerHTML = '';
+
+      // Create or get modal element if in modal mode
+      let modal: HTMLElement | null = null;
+      if (this._modalEdit) {
+        // Use cached reference or query if not yet cached
+        if (!this._modalElement) {
+          this._modalElement = this.shadow.querySelector(
+            '.ck-modal'
+          ) as HTMLElement | null;
+        }
+
+        modal = this._modalElement;
+
+        if (!modal) {
+          modal = document.createElement('div');
+          modal.className = 'ck-modal ck-hidden';
+          modal.setAttribute('role', 'dialog');
+          modal.setAttribute('aria-modal', 'true');
+          modal.setAttribute('aria-hidden', 'true');
+
+          // Create modal content wrapper
+          const modalContent = document.createElement('div');
+          modalContent.className = 'ck-modal__content';
+          modal.appendChild(modalContent);
+
+          // Add event listeners only when creating modal (not on every render)
+          modal.addEventListener('click', this.handleModalClick);
+          modal.addEventListener('click', this.handleWrapperClick);
+          modal.addEventListener('input', this.handleWrapperInput);
+
+          this.shadow.appendChild(modal);
+
+          // Cache the modal reference
+          this._modalElement = modal;
+        }
+      }
+
+      // Cache templates on first render
+      this.initTemplates();
+
+      // If no templates, render default message
+      if (!this._displayTemplate) {
+        const heading = document.createElement('h1');
+        heading.className = 'ck-editable-array__message';
+        heading.textContent = `Hello, ${this.name}!`;
+        heading.style.color = sanitizedColor;
+
+        const subtitle = document.createElement('p');
+        subtitle.className = 'ck-editable-array__subtitle';
+        subtitle.textContent = 'Welcome to our Web Component Library';
+
+        wrapper.appendChild(heading);
+        wrapper.appendChild(subtitle);
+        return;
+      }
+
+      // Render rows from data
+      const componentName = this.getAttribute('name') || 'items';
+      this._data.forEach((rowData, index) => {
+        const rowEl = this.renderRow(rowData, index, componentName);
+        wrapper.appendChild(rowEl);
+      });
+
+      // Handle modal rendering if in modal edit mode
+      if (this._modalEdit && modal) {
+        const editingIndex = this.getEditingRowIndex();
+        this.renderModal(modal, editingIndex);
+      }
     } catch (error) {
       // FR-029: Handle rendering errors
       this.handleRenderError(
