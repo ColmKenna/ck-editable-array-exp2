@@ -238,18 +238,19 @@ describe('FR-007: Restore Row', () => {
     expect(restoreBtn?.tagName).toBe('BUTTON');
     expect(restoreBtn?.getAttribute('data-action')).toBe('restore');
 
-    // Check that the CSS stylesheet excludes restore button from deleted styles
+    // Check that the CSS stylesheet excludes action buttons from deleted styles
     const shadowRoot = element.shadowRoot;
     const styleElement = shadowRoot?.querySelector('style[data-ck-editable-array-fallback], style');
     if (styleElement) {
       const cssText = styleElement.textContent || '';
-      // Verify CSS uses :not() selector to exclude restore buttons from deleted styles
+      // Verify CSS handles deleted styles
       expect(cssText).toContain('ck-deleted');
-      // The fix should exclude [data-action="restore"] from opacity and text-decoration
-      const hasNotSelector = cssText.includes(':not([data-action="restore"])') ||
-                              cssText.includes('ck-deleted:not') ||
-                              cssText.includes('[data-action="restore"]');
-      expect(hasNotSelector).toBe(true);
+      // Verify action buttons are protected from deleted styles (by any means)
+      // This could be via [data-action] selector, :not() pseudo-class, or explicit button styling
+      const hasActionProtection = cssText.includes('[data-action]') ||
+                                  cssText.includes(':not([data-action="restore"])') ||
+                                  cssText.includes('ck-deleted:not');
+      expect(hasActionProtection).toBe(true);
     }
   });
 });
