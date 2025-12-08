@@ -88,6 +88,22 @@ el.validationSchema = {
 ```
 Or programmatically: `el.readonly = true;`
 
+### Modal Edit Mode
+
+```html
+<!-- Enable modal editing for better UX on small screens -->
+<ck-editable-array modal-edit>...</ck-editable-array>
+```
+
+When modal edit is enabled:
+- Clicking "Edit" opens a modal dialog instead of inline editing
+- Modal displays validation errors clearly with disabled save button
+- Better focus management and accessibility
+- Users can close modal by clicking overlay, pressing Escape, or clicking Cancel
+- Validation failures prevent save and display helpful error messages
+
+See `examples/modal-edit.html` for a complete working example.
+
 ## Data Actions
 
 Use `data-action` attributes on buttons within templates:

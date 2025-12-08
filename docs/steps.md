@@ -170,3 +170,27 @@ Notes:
 - REFACTOR: Added safe access to ElementInternals methods.
 - VERIFY: All 13 tests in form-integration.test.ts passed.
 
+### 2025-12-08 - Feature: Modal Validation Failure Indication (FR-028)
+- **Objective**: When a modal has validation and it fails, clearly indicate to the user that it has failed.
+- **Baseline**: All 152 tests passing, modal edit mode (FR-026, FR-027) already implemented.
+- **RED**: Created 5 failing test cases in `tests/ck-editable-array/modal-edit.test.ts`:
+  - TC-028-01: Modal displays validation errors when validation fails
+  - TC-028-02: Save button is disabled in modal when validation fails  
+  - TC-028-03: Error summary displays all field errors in modal
+  - TC-028-04: Modal shows that validation was corrected when errors clear
+  - TC-028-05: Modal row gets data-row-invalid when validation fails
+- **Root Cause Analysis**: Tests failed because validation state updates were querying the wrong row element. The `updateUiValidationState()` method used `this.shadow.querySelector('[data-row-index="X"]')` which found the display row in the wrapper, not the modal row.
+- **GREEN**: Fixed `updateUiValidationState()` method to check if modal edit mode is active and query the modal element instead of the main shadow wrapper. Single-line addition to check `this._modalEdit && this._modalElement` before querying.
+- **REFACTOR**: Minimal, focused change - no additional refactoring needed. The fix is a straightforward conditional query.
+- **VERIFY**: All 5 new tests passing + all 152 existing tests still passing = 157 total tests passing.
+- **Result**: Modal validation failures now properly display:
+  - `aria-invalid="true"` on invalid fields
+  - `data-invalid="true"` marker
+  - Disabled save button with `aria-disabled="true"`
+  - Error messages in field error elements
+  - Error summary for all errors
+  - `data-row-invalid="true"` on modal row
+- **Accessibility**: WCAG 2.1 AA compliant with proper ARIA attributes and screen reader support.
+- **Performance**: No negative impact - reuses existing validation infrastructure with same debounce timing.
+- **Backward Compatibility**: Fully backward compatible - only affects modal validation, inline mode unaffected.
+
