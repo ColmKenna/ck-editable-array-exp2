@@ -58,6 +58,11 @@ export class CkEditableArray extends HTMLElement {
   // i18n configuration (FR-021)
   private _i18n: Record<string, string> = {};
 
+  // Error handling (FR-029, FR-030)
+  private _hasError = false;
+  private _lastError: Error | null = null;
+  private _debug = false;
+
   // Validation schema for form validation (FR-018)
   private _validationSchema: Record<
     string,
@@ -114,7 +119,48 @@ export class CkEditableArray extends HTMLElement {
     this._i18n = value;
   }
 
+  // FR-029: Error handling properties
+  get hasError(): boolean {
+    return this._hasError;
+  }
 
+  get lastError(): Error | null {
+    return this._lastError;
+  }
+
+  get debug(): boolean {
+    return this._debug;
+  }
+
+  set debug(value: boolean) {
+    this._debug = value;
+  }
+
+  // FR-030: Error recovery
+  clearError(): void {
+    this._hasError = false;
+    this._lastError = null;
+  }
+
+  // FR-029: Handle rendering errors
+  private handleRenderError(error: Error, context: string): void {
+    this._hasError = true;
+    this._lastError = error;
+
+    // Log to console if debug mode enabled
+    if (this._debug) {
+      console.error(`[ck-editable-array] Rendering error in ${context}:`, error);
+    }
+
+    // Dispatch rendererror event
+    this.dispatchEvent(
+      new CustomEvent('rendererror', {
+        detail: { error, context },
+        bubbles: true,
+        composed: true
+      })
+    );
+  }
 
   // FR-010, FR-011: Undo/Redo properties
   get canUndo(): boolean {
@@ -1430,8 +1476,9 @@ export class CkEditableArray extends HTMLElement {
   };
 
   private render() {
-    // Guard: don't render if not connected to DOM
-    if (!this.isConnected) return;
+    try {
+      // Guard: don't render if not connected to DOM
+      if (!this.isConnected) return;
 
     // Ensure fallback style exists without being wiped by later DOM updates
     if (
@@ -1629,6 +1676,13 @@ export class CkEditableArray extends HTMLElement {
         modal.classList.add('ck-hidden');
         modal.setAttribute('aria-hidden', 'true');
       }
+    }
+    } catch (error) {
+      // FR-029: Handle rendering errors
+      this.handleRenderError(
+        error instanceof Error ? error : new Error(String(error)),
+        'render'
+      );
     }
   }
 

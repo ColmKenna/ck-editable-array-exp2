@@ -298,7 +298,7 @@ tests/
 | Done | Test Case ID | NFR | Description | Test File |
 |------|--------------|-----|-------------|------------|
 | [x] | TC-P-001-01 | NFR-P-001 | Input changes don't full re-render | performance.test.ts |
-| [ ] | TC-P-002-01 | NFR-P-002 | History bounded by maxHistorySize | performance.test.ts |
+| [x] | TC-P-002-01 | NFR-P-002 | History bounded by maxHistorySize | performance.test.ts |
 | [x] | TC-P-003-01 | NFR-P-003 | 100 rows render < 100ms | performance.test.ts |
 | [x] | TC-R-001-01 | NFR-R-001 | External mutation doesn't affect state | core-data.test.ts |
 | [x] | TC-R-002-01 | NFR-R-002 | Circular references handled | core-data.test.ts |
