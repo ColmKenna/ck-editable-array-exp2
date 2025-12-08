@@ -282,15 +282,15 @@ tests/
 
 | Done | Test Case ID | NFR | Description | Test File |
 |------|--------------|-----|-------------|------------|
-| [ ] | TC-A-001-01 | NFR-A-001 | Invalid inputs have aria-invalid | accessibility.test.ts |
-| [ ] | TC-A-001-02 | NFR-A-001 | aria-describedby links to error | accessibility.test.ts |
-| [ ] | TC-A-002-01 | NFR-A-002 | Focus moves to first input on edit | accessibility.test.ts |
-| [ ] | TC-A-002-02 | NFR-A-002 | Focus returns to toggle on save | accessibility.test.ts |
-| [ ] | TC-A-002-03 | NFR-A-002 | Focus trapped in modal | accessibility.test.ts |
-| [ ] | TC-A-003-01 | NFR-A-003 | Modal has role="dialog" | accessibility.test.ts |
-| [ ] | TC-A-003-02 | NFR-A-003 | Modal has aria-modal="true" | accessibility.test.ts |
-| [ ] | TC-A-003-03 | NFR-A-003 | Overlay has aria-hidden toggled | accessibility.test.ts |
-| [ ] | TC-A-004-01 | NFR-A-004 | Selected rows have aria-selected | accessibility.test.ts |
+| [x] | TC-A-001-01 | NFR-A-001 | Invalid inputs have aria-invalid | accessibility.test.ts |
+| [x] | TC-A-001-02 | NFR-A-001 | aria-describedby links to error | accessibility.test.ts |
+| [x] | TC-A-002-01 | NFR-A-002 | Focus moves to first input on edit | accessibility.test.ts |
+| [x] | TC-A-002-02 | NFR-A-002 | Focus returns to toggle on save | accessibility.test.ts |
+| [x] | TC-A-002-03 | NFR-A-002 | Focus trapped in modal | accessibility.test.ts |
+| [x] | TC-A-003-01 | NFR-A-003 | Modal has role="dialog" | accessibility.test.ts |
+| [x] | TC-A-003-02 | NFR-A-003 | Modal has aria-modal="true" | accessibility.test.ts |
+| [x] | TC-A-003-03 | NFR-A-003 | Overlay has aria-hidden toggled | accessibility.test.ts |
+| [x] | TC-A-004-01 | NFR-A-004 | Selected rows have aria-selected | accessibility.test.ts |
 
 ### Phase 12: Performance & Reliability (NFR)
 **Priority**: Should-have (NFR-P, NFR-R)

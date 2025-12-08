@@ -1,138 +1,331 @@
-# Remediation Plan: CkEditableArray
+# Remediation Plan: ck-editable-array Component
 
-**Generated:** 2025-12-08
-**Based on:** code-review-2025-12-08.md
-**Component:** CkEditableArray (src/components/ck-editable-array/ck-editable-array.ts)
-
----
+**Generated:** December 8, 2025  
+**Based on:** code-review-2025-12-08.md  
+**Component:** `src/components/ck-editable-array/ck-editable-array.ts`
 
 ## Executive Summary
 
-**Total Issues:** 15 (3 High, 7 Medium, 5 Low)
+The code review identified **12 issues** across 3 priority levels:
+- **3 High-priority** (code complexity, magic numbers, error recovery)
+- **5 Medium-priority** (performance, API design, lifecycle, documentation)
+- **4 Low-priority** (code quality improvements)
 
 **Key Risk Areas:**
-- **Accessibility** (3 high-priority issues): Missing focus trap, incomplete keyboard navigation, focus management gaps
-- **Performance** (1 medium-priority issue): Full re-render on all data changes via innerHTML
-- **API Design** (3 medium-priority issues): Inconsistent attribute reflection, missing public API methods
+1. Component size (1743 lines) makes maintenance and testing difficult
+2. Event listener cleanup missing, potential memory leak
+3. Error recovery incomplete after render failures
 
-**Estimated Complexity:** Medium
-- High-priority fixes: 8-16 hours
-- Medium-priority fixes: 16-24 hours
-- Low-priority fixes: 8-12 hours
-- **Total:** 32-52 hours (4-7 days)
+**Estimated Complexity:** Medium-Large (40-60 hours total)
 
-**Recommended Approach:** Phased rollout
-- Phase 1: Critical accessibility fixes (High-priority, WCAG compliance)
-- Phase 2: Performance and lifecycle improvements (Medium-priority)
-- Phase 3: API design and code quality (Medium/Low-priority)
-- Phase 4: Documentation and refactoring (Low-priority)
-
-Each phase should be independently deployable with passing tests.
+**Recommended Approach:** Phased implementation over 4 sprints, starting with high-priority items. Each phase is independently deployable and testable.
 
 ---
 
-## Phase 1: Critical Accessibility Fixes
+## Phase 1: High-Priority Fixes (Critical Path)
 
-**Goal:** Achieve WCAG 2.1 AA compliance for keyboard and screen reader users
-**Risk Level:** High
-**Dependencies:** None
-**Estimated Effort:** M (8-16 hours)
+**Goal:** Address code maintainability, configuration clarity, and error resilience  
+**Risk Level:** Medium  
+**Dependencies:** None  
+**Estimated Effort:** L (16-20 hours)
 
 ### Tasks
 
 | Task # | Issue Reference | Task Description | Acceptance Criteria | Existing Tests | New Tests Required |
 |--------|-----------------|------------------|---------------------|----------------|-------------------|
-| 1.1 | H-Acc-focustrap | Implement modal focus trap | • Tab/Shift+Tab trapped within modal<br>• Focus cycles between first and last focusable elements<br>• Works with keyboard-only navigation | None | +3: focus trap forward, focus trap backward, focus trap with dynamic content |
-| 1.2 | H-Acc-keyboard | Add Escape key to cancel edit | • Escape key closes edit mode<br>• Works in both inline and modal modes<br>• Doesn't interfere with other keyboard events | modal-edit.test.ts (partial) | +2: Escape in inline mode, Escape in modal mode |
-| 1.3 | H-Acc-keyboard | Add Enter/Space keyboard support | • Enter/Space activates action buttons<br>• Works consistently across all buttons | None | +4: Enter on toggle, Space on save, Enter on delete, Space on cancel |
-| 1.4 | H-Acc-focus | Fix focus restoration in modal mode | • Focus returns to toggle button after save/cancel<br>• Works when modal closes via overlay click<br>• Stores last focused element before modal | modal-edit.test.ts (partial) | +3: focus after save, focus after cancel, focus after overlay click |
-| 1.5 | H-Acc-focus | Track and restore focus globally | • Store last focused element on edit enter<br>• Restore focus on edit exit<br>• Handle edge cases (element removed, element disabled) | None | +2: focus restoration after row delete, focus on disabled element fallback |
+| 1.1 | High-CodeQuality-Constants | Extract magic numbers to named constants | All hardcoded timeouts/limits replaced with named constants at file top | All 152 tests pass | None (refactor only) |
+| 1.2 | High-ErrorHandling-Recovery | Add render retry mechanism | `retry()` method exists, `_isRendering` flag prevents loops, tests verify | error-handling.test.ts | 2 new: retry success, retry prevents loop |
+| 1.3 | High-Maintainability-ModuleSize | Extract validation logic to separate file | New `validation.ts` module exports validation functions, component imports and uses them | validation.test.ts, all tests pass | None (tests already exist) |
 
-**Phase 1 Deliverables:**
-- [ ] Focus trap utility method
-- [ ] Keyboard event handler with Escape support
-- [ ] Enhanced focus management logic
-- [ ] 14 new accessibility tests passing
-- [ ] All existing 78 tests still passing
-- [ ] Documentation update in readme.technical.md
+### Code Change Previews
+
+#### Task 1.1: Extract Magic Numbers
+
+**Before:**
+```typescript
+private _validationTimeout: ReturnType<typeof setTimeout> | null = null;
+// ... later in code
+clearTimeout(this._validationTimeout);
+this._validationTimeout = setTimeout(() => {
+  this.updateUiValidationState(index);
+}, 150); // What is 150? Why 150?
+```
+
+**After:**
+```typescript
+// At top of file
+const VALIDATION_DEBOUNCE_MS = 150; // Debounce validation to avoid excessive updates during typing
+const DEFAULT_HISTORY_SIZE = 50; // Undo/redo stack size limit
+const MAX_RENDER_TIME_MS = 150; // Performance target for 100-row render
+
+private _validationTimeout: ReturnType<typeof setTimeout> | null = null;
+// ... later in code
+clearTimeout(this._validationTimeout);
+this._validationTimeout = setTimeout(() => {
+  this.updateUiValidationState(index);
+}, VALIDATION_DEBOUNCE_MS);
+```
+
+**Explanation:** Named constants make the codebase self-documenting and easier to configure.
+
+#### Task 1.2: Error Recovery
+
+**Before:**
+```typescript
+private render() {
+  try {
+    // ... rendering logic
+  } catch (error) {
+    this.handleRenderError(/*...*/);
+    // Component may be in broken state, no way to recover
+  }
+}
+```
+
+**After:**
+```typescript
+private _isRendering = false;
+
+private render() {
+  if (this._isRendering) return; // Prevent re-render loops
+  this._isRendering = true;
+  
+  try {
+    // ... rendering logic
+    this._isRendering = false;
+  } catch (error) {
+    this._isRendering = false;
+    this.handleRenderError(/*...*/);
+  }
+}
+
+// FR-030 extension: Retry rendering after error
+retry(): boolean {
+  if (!this._hasError) return true;
+  this.clearError();
+  try {
+    this.render();
+    return !this._hasError;
+  } catch {
+    return false;
+  }
+}
+```
+
+**Explanation:** Adds safety guard against render loops and provides recovery mechanism.
 
 ---
 
-## Phase 2: Performance & Lifecycle Improvements
+## Phase 2: Medium-Priority Performance & Lifecycle
 
-**Goal:** Optimize rendering performance and fix lifecycle issues
-**Risk Level:** Medium
-**Dependencies:** None (can run parallel to Phase 1)
-**Estimated Effort:** L (16-24 hours)
+**Goal:** Optimize validation behavior and prevent memory leaks  
+**Risk Level:** Low  
+**Dependencies:** None  
+**Estimated Effort:** M (12-16 hours)
 
 ### Tasks
 
 | Task # | Issue Reference | Task Description | Acceptance Criteria | Existing Tests | New Tests Required |
 |--------|-----------------|------------------|---------------------|----------------|-------------------|
-| 2.1 | M-Perf-innerHTML | Implement differential rendering | • Only changed rows are updated<br>• New rows appended, removed rows deleted<br>• Existing row references preserved | performance.test.ts (TC-P-001-01) | +3: add row doesn't re-render others, delete row preserves others, data change updates only affected rows |
-| 2.2 | M-Perf-innerHTML | Add render mode flag for optimization | • `_renderMode` flag: 'full' \| 'partial'<br>• Full render on data set, partial on row updates<br>• Backwards compatible | None | +2: full render mode, partial render mode |
-| 2.3 | M-Lifecycle-doublerender | Remove render() from property setters | • readonly setter only sets attribute<br>• modalEdit setter only sets attribute<br>• attributeChangedCallback handles render | readonly.test.ts, modal-edit.test.ts | +2: readonly attribute change renders once, modalEdit attribute change renders once |
-| 2.4 | M-Error-clone | Add warnings for clone failures | • Console.warn on structuredClone failure<br>• Console.warn on JSON clone failure<br>• Console.warn on circular reference<br>• Include debug info in warning | core-data.test.ts | +3: warning on circular ref, warning on unserializable type, warning includes stack trace |
-| 2.5 | M-Error-render | Add error boundary to render() | • Try-catch around render logic<br>• Set hasError flag on error<br>• Dispatch 'rendererror' event<br>• Display fallback UI on error | None | +4: render error sets hasError, rendererror event fired, fallback UI shown, recovery after error |
+| 2.1 | Medium-Performance-ValidationDebounce | Implement per-field validation debounce | Each input field has its own debounce timeout | validation.test.ts | 1 new: rapid multi-field typing test |
+| 2.2 | Medium-Lifecycle-Cleanup | Add disconnectedCallback cleanup | Event listeners removed in disconnectedCallback | All tests pass | 1 new: verify no memory leak after remove |
+| 2.3 | Medium-CodeQuality-DeepClone | Add max depth to deepClone() | deepClone throws error if depth > 10 | core-data.test.ts | 2 new: deeply nested object, depth limit error |
 
-**Phase 2 Deliverables:**
-- [ ] Differential rendering implementation
-- [ ] Refactored attribute/property setters
-- [ ] Error logging and boundary handling
-- [ ] 14 new tests passing
-- [ ] Performance improvement measurable (benchmark)
-- [ ] Documentation update in readme.technical.md
+### Code Change Previews
+
+#### Task 2.1: Per-Field Debounce
+
+**Before:**
+```typescript
+private _validationTimeout: ReturnType<typeof setTimeout> | null = null;
+
+private handleWrapperInput = (e: Event) => {
+  // Single timeout for all fields
+  clearTimeout(this._validationTimeout);
+  this._validationTimeout = setTimeout(() => {
+    // validate...
+  }, 150);
+};
+```
+
+**After:**
+```typescript
+private _validationTimeouts: Map<string, ReturnType<typeof setTimeout>> = new Map();
+
+private handleWrapperInput = (e: Event) => {
+  const target = e.target as HTMLInputElement;
+  const field = target.getAttribute('data-bind');
+  if (!field) return;
+  
+  // Per-field debounce
+  const existing = this._validationTimeouts.get(field);
+  if (existing) clearTimeout(existing);
+  
+  const timeout = setTimeout(() => {
+    this._validationTimeouts.delete(field);
+    // validate field...
+  }, VALIDATION_DEBOUNCE_MS);
+  
+  this._validationTimeouts.set(field, timeout);
+};
+```
+
+**Explanation:** Prevents validation skipping when user rapidly types across multiple fields.
+
+#### Task 2.2: Lifecycle Cleanup
+
+**Before:**
+```typescript
+disconnectedCallback() {
+  // Event listeners never removed - potential memory leak!
+}
+```
+
+**After:**
+```typescript
+connectedCallback() {
+  // Store bound references for later cleanup
+  this._boundWrapperClick = this.handleWrapperClick.bind(this);
+  this._boundWrapperInput = this.handleWrapperInput.bind(this);
+  // Attach listeners...
+}
+
+disconnectedCallback() {
+  // Clean up event listeners
+  const wrapper = this.shadow.querySelector('.ck-editable-array');
+  if (wrapper) {
+    wrapper.removeEventListener('click', this._boundWrapperClick);
+    wrapper.removeEventListener('input', this._boundWrapperInput);
+  }
+  
+  // Clear any pending timeouts
+  this._validationTimeouts.forEach(t => clearTimeout(t));
+  this._validationTimeouts.clear();
+}
+```
+
+**Explanation:** Prevents memory leaks when component is removed from DOM.
 
 ---
 
-## Phase 3: API Design & Code Quality
+## Phase 3: Medium-Priority API & Documentation
 
-**Goal:** Improve public API consistency and message localization
-**Risk Level:** Low
-**Dependencies:** Phase 2 (for consistent setter patterns)
-**Estimated Effort:** M (8-12 hours)
+**Goal:** Clean up API inconsistencies and improve developer experience  
+**Risk Level:** Low  
+**Dependencies:** None  
+**Estimated Effort:** M (10-14 hours)
 
 ### Tasks
 
 | Task # | Issue Reference | Task Description | Acceptance Criteria | Existing Tests | New Tests Required |
 |--------|-----------------|------------------|---------------------|----------------|-------------------|
-| 3.1 | M-API-publicmethods | Add public row manipulation methods | • getRow(index) returns row data clone<br>• updateRow(index, data) updates and validates<br>• Public API documented | None | +4: getRow returns clone, updateRow validates, updateRow triggers events, updateRow blocked in readonly |
-| 3.2 | M-Quality-i18n | Extract validation messages to constants | • Messages in MESSAGE_DEFAULTS object<br>• Accept i18nMessages property for overrides<br>• Fallback to defaults if override missing | validation.test.ts | +3: default messages used, custom messages override, missing override falls back |
-| 3.3 | L-Quality-types | Define helper types to reduce casting | • UnknownRecord, DataArray types exported<br>• Reduce `as unknown as` usage by 50%<br>• No runtime behavior change | All tests | 0 (refactor only, existing tests validate) |
-| 3.4 | L-API-formassociation | Research ElementInternals integration | • Document findings on form-associated custom elements<br>• Prototype formAssociated implementation<br>• Evaluate browser support | None | Not required for research phase |
+| 3.1 | Medium-APIDesign-DuplicateMethods | Deprecate deselectAll(), keep clearSelection() | Console warning when deselectAll() used, both methods work | selection.test.ts | None (update existing test comments) |
+| 3.2 | Medium-Documentation-JSDoc | Add JSDoc to all public methods | Every public method has JSDoc with @param, @returns, @example | N/A (documentation) | None |
 
-**Phase 3 Deliverables:**
-- [ ] Public row manipulation API
-- [ ] i18n message system
-- [ ] Type definition improvements
-- [ ] 7 new tests passing
-- [ ] API documentation in README.md
-- [ ] i18n documentation in readme.technical.md
+### Code Change Previews
+
+#### Task 3.1: API Consolidation
+
+**Before:**
+```typescript
+clearSelection(): void {
+  this._selectedIndices = [];
+  // ...
+}
+
+deselectAll(): void {
+  this.clearSelection(); // Why two methods?
+}
+```
+
+**After:**
+```typescript
+clearSelection(): void {
+  this._selectedIndices = [];
+  // ...
+}
+
+/**
+ * @deprecated Use clearSelection() instead. Will be removed in v2.0.
+ */
+deselectAll(): void {
+  console.warn('[ck-editable-array] deselectAll() is deprecated. Use clearSelection() instead.');
+  this.clearSelection();
+}
+```
+
+**Explanation:** Maintains backward compatibility while guiding developers to preferred API.
+
+#### Task 3.2: JSDoc Example
+
+**Before:**
+```typescript
+addRow(): void {
+  // No documentation
+  const newItem = this._newItemFactory();
+  // ...
+}
+```
+
+**After:**
+```typescript
+/**
+ * Adds a new row to the array using the configured newItemFactory.
+ * The new row enters edit mode automatically.
+ * 
+ * @throws {Error} If readonly mode is enabled
+ * @throws {Error} If another row is currently being edited
+ * @fires CkEditableArray#datachanged - After row is added
+ * 
+ * @example
+ * element.newItemFactory = () => ({ name: '', email: '' });
+ * element.addRow(); // Adds empty user
+ */
+addRow(): void {
+  const newItem = this._newItemFactory();
+  // ...
+}
+```
+
+**Explanation:** Improves IDE autocomplete and reduces need to read source code.
 
 ---
 
-## Phase 4: Code Refactoring & Documentation
+## Phase 4: Low-Priority Code Quality
 
-**Goal:** Improve maintainability and developer experience
-**Risk Level:** Low
-**Dependencies:** Phases 1-3 complete
+**Goal:** Address remaining code quality issues  
+**Risk Level:** Very Low  
+**Dependencies:** None  
 **Estimated Effort:** S (8-12 hours)
 
 ### Tasks
 
 | Task # | Issue Reference | Task Description | Acceptance Criteria | Existing Tests | New Tests Required |
 |--------|-----------------|------------------|---------------------|----------------|-------------------|
-| 4.1 | L-Maintain-rendersize | Extract render() into smaller methods | • renderDefaultMessage(wrapper)<br>• renderRows(wrapper)<br>• renderModal()<br>• ensureWrapper(), ensureStyles(), applyStyling()<br>• Main render() < 50 lines | All tests | 0 (refactor only, existing tests validate) |
-| 4.2 | L-Quality-deadcode | Remove _onResize placeholder | • Remove _onResize method and listener<br>• Remove from connectedCallback/disconnectedCallback<br>• Add TODO if needed for future | ck-editable-array.test.ts | +1: verify resize listener not registered (if removing) |
-| 4.3 | L-Docs-jsdoc | Add JSDoc to complex methods | • deepClone has JSDoc<br>• bindElementData has JSDoc<br>• validateRow has JSDoc<br>• All public methods have JSDoc | None | 0 (documentation only) |
-| 4.4 | L-Docs-examples | Update examples/demo.html | • Show keyboard navigation<br>• Show i18n messages<br>• Show public API usage (getRow, updateRow) | None | 0 (demo only) |
+| 4.1 | Low-CodeQuality-GetNestedValue | Return { found, value } from getNestedValue | Method signature changed, callers updated | data-binding.test.ts | 1 new: distinguish undefined value vs missing path |
+| 4.2 | Low-Maintainability-ValidationTypes | Extract ValidationSchema type | Type defined at module level, used consistently | N/A (types) | None |
+| 4.3 | Low-Performance-RegexConstant | Move color regex to class constant | Regex defined once, reused in getSanitizedColor | All tests pass | None (performance optimization) |
+| 4.4 | Low-CodeQuality-EventHandlers | Convert arrow functions to bound methods | Named methods with .bind(this) in constructor | All tests pass | None (refactor only) |
 
-**Phase 4 Deliverables:**
-- [ ] Refactored render() method (6 extracted methods)
-- [ ] JSDoc comments on 15+ methods
-- [ ] Updated demo with new features
-- [ ] 1 new test passing
-- [ ] Code complexity reduced (measurable via linter)
+---
+
+## Test Plan
+
+### Regression Tests
+| Issue Reference | Test Type | Test Description | Test File Location |
+|-----------------|-----------|------------------|-------------------|
+| High-ErrorHandling-Recovery | Regression | Verify retry() recovers from render error | error-handling.test.ts |
+| High-ErrorHandling-Recovery | Validation | Test _isRendering prevents infinite loops | error-handling.test.ts |
+| Medium-Performance-ValidationDebounce | Validation | Multi-field rapid typing validates all fields | validation.test.ts |
+| Medium-Lifecycle-Cleanup | Regression | Component removal doesn't leak memory | ck-editable-array.test.ts |
+| Medium-CodeQuality-DeepClone | Edge Case | Deeply nested objects clone correctly | core-data.test.ts |
+| Medium-CodeQuality-DeepClone | Validation | Max depth exceeded throws error | core-data.test.ts |
+| Low-CodeQuality-GetNestedValue | Edge Case | Distinguish undefined value vs missing path | data-binding.test.ts |
+
+### Existing Tests to Update
+- `selection.test.ts`: Add deprecation notice comment for deselectAll()
+- `validation.test.ts`: Update constants references
+- All test files: Verify no regressions after refactoring
 
 ---
 
@@ -140,459 +333,50 @@ Each phase should be independently deployable with passing tests.
 
 | Risk | Likelihood | Impact | Mitigation Strategy |
 |------|------------|--------|---------------------|
-| Focus trap breaks existing functionality | Medium | High | • Implement behind feature flag initially<br>• Extensive testing with screen readers<br>• Fallback to current behavior on error |
-| Differential rendering introduces bugs | Medium | High | • Implement feature flag for full/partial render<br>• Compare rendered output before/after<br>• Performance tests for regression detection |
-| Breaking changes to public API | Low | Medium | • Only add new methods, don't change existing<br>• Mark any deprecated methods clearly<br>• Provide migration guide |
-| i18n adds complexity | Low | Medium | • Keep simple: just message overrides<br>• Default to current English messages<br>• Document clearly in README |
-| Type refactoring breaks builds | Low | Low | • Run full TypeScript compilation after each change<br>• Keep type changes minimal and incremental |
-
----
-
-## Test Plan
-
-### Phase 1: Accessibility Tests
-
-| Issue Reference | Test Type | Test Description | Test File Location |
-|-----------------|-----------|------------------|-------------------|
-| H-Acc-focustrap | Validation | Focus trap prevents Tab from exiting modal | accessibility.test.ts |
-| H-Acc-focustrap | Edge Case | Focus trap handles last element to first element | accessibility.test.ts |
-| H-Acc-focustrap | Edge Case | Focus trap with Shift+Tab (backward) | accessibility.test.ts |
-| H-Acc-keyboard | Validation | Escape key cancels edit in inline mode | edit-mode.test.ts |
-| H-Acc-keyboard | Validation | Escape key closes modal and cancels edit | modal-edit.test.ts |
-| H-Acc-keyboard | Validation | Enter activates toggle button | edit-mode.test.ts |
-| H-Acc-keyboard | Validation | Space activates save button | edit-mode.test.ts |
-| H-Acc-focus | Validation | Focus returns to toggle after save in modal | modal-edit.test.ts |
-| H-Acc-focus | Validation | Focus returns after cancel in modal | modal-edit.test.ts |
-| H-Acc-focus | Edge Case | Focus after overlay click cancel | modal-edit.test.ts |
-| H-Acc-focus | Edge Case | Focus restoration when row deleted | edit-mode.test.ts |
-| H-Acc-focus | Edge Case | Focus fallback when element disabled | edit-mode.test.ts |
-
-### Phase 2: Performance & Error Handling Tests
-
-| Issue Reference | Test Type | Test Description | Test File Location |
-|-----------------|-----------|------------------|-------------------|
-| M-Perf-innerHTML | Validation | Adding row doesn't re-render existing rows | performance.test.ts |
-| M-Perf-innerHTML | Validation | Deleting row preserves other row references | performance.test.ts |
-| M-Perf-innerHTML | Validation | Data change updates only affected rows | performance.test.ts |
-| M-Lifecycle-doublerender | Regression | Setting readonly attribute renders once | readonly.test.ts |
-| M-Lifecycle-doublerender | Regression | Setting modalEdit attribute renders once | modal-edit.test.ts |
-| M-Error-clone | Validation | Circular reference logs warning | core-data.test.ts |
-| M-Error-clone | Validation | Unserializable type logs warning | core-data.test.ts |
-| M-Error-render | Validation | Render error sets hasError flag | error-handling.test.ts (new) |
-| M-Error-render | Validation | rendererror event dispatched on error | error-handling.test.ts (new) |
-| M-Error-render | Edge Case | Fallback UI displayed on render error | error-handling.test.ts (new) |
-| M-Error-render | Edge Case | Component recovers after error fixed | error-handling.test.ts (new) |
-
-### Phase 3: API & Localization Tests
-
-| Issue Reference | Test Type | Test Description | Test File Location |
-|-----------------|-----------|------------------|-------------------|
-| M-API-publicmethods | Validation | getRow returns clone, not reference | add-row.test.ts |
-| M-API-publicmethods | Validation | updateRow validates data | validation.test.ts |
-| M-API-publicmethods | Validation | updateRow dispatches datachanged event | add-row.test.ts |
-| M-API-publicmethods | Edge Case | updateRow blocked in readonly mode | readonly.test.ts |
-| M-Quality-i18n | Validation | Default messages used when no override | validation.test.ts |
-| M-Quality-i18n | Validation | Custom messages override defaults | validation.test.ts |
-| M-Quality-i18n | Edge Case | Missing override falls back to default | validation.test.ts |
-
-### Phase 4: Refactoring Tests
-
-| Issue Reference | Test Type | Test Description | Test File Location |
-|-----------------|-----------|------------------|-------------------|
-| L-Quality-deadcode | Regression | Resize listener not registered (if removed) | ck-editable-array.test.ts |
-
----
-
-## Code Change Previews
-
-### High Priority: Issue H-Acc-focustrap (Focus Trap)
-
-**Before:**
-```typescript
-// Modal shown, but no focus trap
-modal.classList.remove('ck-hidden');
-modal.setAttribute('aria-hidden', 'false');
-```
-
-**After:**
-```typescript
-private setupFocusTrap(modal: HTMLElement): void {
-  const focusableSelector =
-    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
-
-  const handleKeydown = (e: KeyboardEvent) => {
-    if (e.key !== 'Tab') return;
-
-    const focusableElements = modal.querySelectorAll(focusableSelector);
-    const firstFocusable = focusableElements[0] as HTMLElement;
-    const lastFocusable = focusableElements[
-      focusableElements.length - 1
-    ] as HTMLElement;
-
-    if (!firstFocusable || !lastFocusable) return;
-
-    if (e.shiftKey) {
-      // Shift+Tab: wrap from first to last
-      if (document.activeElement === firstFocusable) {
-        lastFocusable.focus();
-        e.preventDefault();
-      }
-    } else {
-      // Tab: wrap from last to first
-      if (document.activeElement === lastFocusable) {
-        firstFocusable.focus();
-        e.preventDefault();
-      }
-    }
-  };
-
-  // Store handler for cleanup
-  (modal as any)._focusTrapHandler = handleKeydown;
-  modal.addEventListener('keydown', handleKeydown);
-}
-
-// In render(), when showing modal:
-modal.classList.remove('ck-hidden');
-modal.setAttribute('aria-hidden', 'false');
-this.setupFocusTrap(modal); // Add focus trap
-```
-
-**Explanation:** This implements a proper focus trap by listening for Tab/Shift+Tab and wrapping focus between the first and last focusable elements. This ensures keyboard users cannot Tab out of the modal dialog, meeting WCAG 2.1 guideline 2.4.3 (Focus Order).
-
----
-
-### High Priority: Issue H-Acc-keyboard (Escape Key)
-
-**Before:**
-```typescript
-// No Escape key handler
-private handleWrapperClick = (e: Event): void => {
-  // Only handles click events
-};
-```
-
-**After:**
-```typescript
-private handleWrapperKeydown = (e: KeyboardEvent): void => {
-  if (e.key === 'Escape') {
-    const editingIndex = this.getEditingRowIndex();
-    if (editingIndex !== -1) {
-      this.cancelEdit(editingIndex);
-      e.preventDefault();
-      e.stopPropagation();
-    }
-  }
-};
-
-// In render(), add keyboard listener:
-wrapper.addEventListener('keydown', this.handleWrapperKeydown);
-
-// In disconnectedCallback(), clean up:
-wrapper.removeEventListener('keydown', this.handleWrapperKeydown);
-```
-
-**Explanation:** Adding Escape key support allows keyboard users to quickly exit edit mode without navigating to the cancel button. This improves user experience and aligns with common modal dialog patterns (WCAG 2.1 guideline 2.1.1 - Keyboard).
-
----
-
-### Medium Priority: Issue M-Perf-innerHTML (Differential Rendering)
-
-**Before:**
-```typescript
-private render() {
-  // ... setup code
-  wrapper.innerHTML = ''; // ❌ Clears everything
-
-  this._data.forEach((rowData, index) => {
-    const rowEl = document.createElement('div');
-    // ... create row from scratch
-    wrapper.appendChild(rowEl);
-  });
-}
-```
-
-**After:**
-```typescript
-private _renderMode: 'full' | 'partial' = 'full';
-
-private render() {
-  // ... setup code
-
-  if (this._renderMode === 'full') {
-    wrapper.innerHTML = '';
-    this.renderAllRows(wrapper);
-  } else {
-    this.updateExistingRows(wrapper);
-  }
-}
-
-private renderAllRows(wrapper: HTMLElement): void {
-  this._data.forEach((rowData, index) => {
-    const rowEl = this.createRowElement(rowData, index);
-    wrapper.appendChild(rowEl);
-  });
-}
-
-private updateExistingRows(wrapper: HTMLElement): void {
-  const existingRows = Array.from(
-    wrapper.querySelectorAll('[data-row-index]')
-  ) as HTMLElement[];
-
-  // Remove rows that no longer exist in data
-  existingRows.forEach(row => {
-    const index = parseInt(row.getAttribute('data-row-index')!, 10);
-    if (index >= this._data.length) {
-      row.remove();
-    }
-  });
-
-  // Update or create rows
-  this._data.forEach((rowData, index) => {
-    let rowEl = wrapper.querySelector(
-      `[data-row-index="${index}"]`
-    ) as HTMLElement | null;
-
-    if (!rowEl) {
-      // Create new row
-      rowEl = this.createRowElement(rowData, index);
-      wrapper.appendChild(rowEl);
-    } else {
-      // Update existing row (only if needed)
-      this.updateRowElement(rowEl, rowData, index);
-    }
-  });
-}
-
-// Usage: set mode before render
-set data(value: unknown[]) {
-  // ... existing code
-  this._renderMode = 'full';
-  this.render();
-}
-
-private saveRow(index: number): void {
-  // ... existing code
-  this._renderMode = 'partial';
-  this.render();
-}
-```
-
-**Explanation:** Differential rendering avoids destroying and recreating DOM elements unnecessarily. Full render mode is used when data array changes (set data), while partial mode updates only changed rows (save, cancel, validation). This preserves element references, improves performance, and prevents issues with CSS animations and transitions.
-
----
-
-### Medium Priority: Issue M-Lifecycle-doublerender (Double Render)
-
-**Before:**
-```typescript
-set readonly(value: boolean) {
-  this._readonly = value;
-  if (value) {
-    this.setAttribute('readonly', '');
-  } else {
-    this.removeAttribute('readonly');
-  }
-  this.render(); // ❌ Causes double render
-}
-
-attributeChangedCallback(attrName: string, oldValue: string, newValue: string) {
-  if (oldValue !== newValue) {
-    if (attrName === 'readonly') {
-      this._readonly = newValue !== null;
-    }
-    this.render(); // Also renders
-  }
-}
-```
-
-**After:**
-```typescript
-set readonly(value: boolean) {
-  if (value) {
-    this.setAttribute('readonly', '');
-  } else {
-    this.removeAttribute('readonly');
-  }
-  // Don't call render() - let attributeChangedCallback handle it
-}
-
-attributeChangedCallback(attrName: string, oldValue: string, newValue: string) {
-  if (oldValue !== newValue) {
-    if (attrName === 'readonly') {
-      this._readonly = newValue !== null;
-      this.render(); // Single render
-    }
-    // ... other attributes
-  }
-}
-```
-
-**Explanation:** Setting the property should only update the attribute; the attributeChangedCallback will update the internal state and render. This follows the standard web component pattern and prevents unnecessary double renders, improving performance.
-
----
-
-## Implementation Order
-
-### Recommended Sequence
-
-1. **Week 1: Phase 1** (Critical Accessibility)
-   - Days 1-2: Implement focus trap (Task 1.1)
-   - Day 3: Add Escape key handler (Task 1.2)
-   - Day 4: Implement keyboard support for buttons (Task 1.3)
-   - Day 5: Fix focus restoration (Tasks 1.4, 1.5)
-   - All 14 new tests passing before merge
-
-2. **Week 2: Phase 2** (Performance & Lifecycle)
-   - Days 1-3: Implement differential rendering (Tasks 2.1, 2.2)
-   - Day 4: Fix double render issues (Task 2.3)
-   - Day 5: Add error logging and boundaries (Tasks 2.4, 2.5)
-   - All 14 new tests passing, performance benchmarks improved
-
-3. **Week 3: Phase 3** (API & Quality)
-   - Days 1-2: Add public API methods (Task 3.1)
-   - Days 3-4: Implement i18n messages (Task 3.2)
-   - Day 5: Type refactoring and ElementInternals research (Tasks 3.3, 3.4)
-   - All 7 new tests passing
-
-4. **Week 4: Phase 4** (Refactoring & Docs)
-   - Days 1-2: Refactor render() method (Task 4.1)
-   - Day 3: Remove dead code (Task 4.2)
-   - Days 4-5: Add JSDoc and update examples (Tasks 4.3, 4.4)
-   - All tests passing, code quality metrics improved
-
-### Parallel Work Opportunities
-
-- **Phase 1 and Phase 2 can run in parallel** (separate developers)
-  - Phase 1 touches: focus management, keyboard handlers
-  - Phase 2 touches: render logic, lifecycle callbacks
-  - Minimal overlap in code areas
-
-- **Phase 3 can start while Phase 2 completes**
-  - Public API methods don't depend on differential rendering
-  - i18n messages are independent
+| Refactoring breaks existing functionality | Low | High | Run full test suite after each task, use TypeScript compiler to catch signature changes |
+| Per-field debounce increases memory | Low | Low | Clear timeouts in disconnectedCallback, monitor with memory profiling |
+| Module extraction causes import issues | Low | Medium | Keep module in same directory, use relative imports, test build process |
+| API deprecation breaks downstream | Very Low | Medium | Use console.warn, document in CHANGELOG, wait 2 versions before removal |
+| Documentation adds maintenance burden | Low | Low | Use automated doc generation tools (TypeDoc), keep examples runnable |
 
 ---
 
 ## Success Metrics
 
-### Phase 1 Success Criteria
-- ✅ All 78 existing tests pass
-- ✅ 14 new accessibility tests pass
-- ✅ Manual testing with screen reader (NVDA/JAWS)
-- ✅ Manual testing with keyboard-only navigation
-- ✅ Focus trap works in all browsers (Chrome, Firefox, Safari, Edge)
-
-### Phase 2 Success Criteria
-- ✅ All 92 tests pass (78 + 14 from Phase 1)
-- ✅ 14 new tests pass (total: 106)
-- ✅ Performance benchmark: 100 row render < 100ms (down from 150ms)
-- ✅ Performance benchmark: Add/delete row < 10ms
-- ✅ No double renders (verified with render counter test)
-
-### Phase 3 Success Criteria
-- ✅ All 106 tests pass
-- ✅ 7 new tests pass (total: 113)
-- ✅ Public API documented in README.md
-- ✅ i18n example in demo
-- ✅ Type casting reduced by 50% (measured by grep count)
-
-### Phase 4 Success Criteria
-- ✅ All 113 tests pass
-- ✅ 1 new test passes (total: 114)
-- ✅ Cyclomatic complexity of render() < 10 (was ~20)
-- ✅ All public methods have JSDoc
-- ✅ Demo showcases all new features
+- **Code Complexity:** Reduce main file from 1743 lines to <800 lines (Phase 1, Task 1.3)
+- **Test Coverage:** Maintain 95%+ coverage, add 9 new tests
+- **Performance:** No regression in render times (<150ms for 100 rows)
+- **Memory:** No leaks detected in Chrome DevTools after component removal
+- **Developer Experience:** JSDoc coverage 100% for public API
 
 ---
 
-## Migration Guide (for consuming applications)
+## Implementation Schedule
 
-### Breaking Changes
+| Phase | Duration | Start | End | Deliverables |
+|-------|----------|-------|-----|-------------|
+| Phase 1 | 3 weeks | Sprint 1 | Sprint 1 | Constants, retry mechanism, validation module |
+| Phase 2 | 2 weeks | Sprint 2 | Sprint 2 | Per-field debounce, lifecycle cleanup, deep clone safety |
+| Phase 3 | 2 weeks | Sprint 3 | Sprint 3 | API deprecations, JSDoc documentation |
+| Phase 4 | 1.5 weeks | Sprint 4 | Sprint 4 | Code quality improvements |
 
-**None anticipated** - All changes are additive or internal refactorings.
-
-### New Features to Adopt
-
-1. **Keyboard Navigation** (Phase 1)
-   ```html
-   <!-- No code changes needed - keyboard support is automatic -->
-   <!-- Escape now cancels edit mode -->
-   <!-- Enter/Space now activates buttons -->
-   ```
-
-2. **i18n Messages** (Phase 3)
-   ```javascript
-   const element = document.querySelector('ck-editable-array');
-   element.i18nMessages = {
-     required: 'Campo obligatorio',
-     minLength: 'Longitud mínima: {min}',
-     // ... other messages
-   };
-   ```
-
-3. **Public API** (Phase 3)
-   ```javascript
-   // Get row data
-   const row = element.getRow(0);
-
-   // Update row
-   element.updateRow(0, { name: 'Updated', email: 'new@email.com' });
-   ```
-
-### Deprecations
-
-**None** - No existing functionality will be removed or deprecated.
+**Total Timeline:** 8.5 weeks (~2 months)
 
 ---
 
-## Rollback Plan
+## Approval & Sign-Off
 
-Each phase is independently deployable. If issues arise:
-
-1. **Phase 1 Rollback:**
-   - Remove keyboard event listener
-   - Remove focus trap logic
-   - Revert to commit before Phase 1
-   - Tests will still pass (removed tests don't break existing functionality)
-
-2. **Phase 2 Rollback:**
-   - Set `_renderMode = 'full'` permanently
-   - Revert property setter changes
-   - Remove error boundary
-   - Performance reverts to baseline (acceptable)
-
-3. **Phase 3 Rollback:**
-   - Public API methods are additive - no rollback needed
-   - i18n is opt-in - default behavior unchanged
-
-4. **Phase 4 Rollback:**
-   - Refactoring is internal - behavior unchanged
-   - Can revert without user impact
+| Role | Name | Date | Signature |
+|------|------|------|-----------|
+| Tech Lead | | | |
+| Product Owner | | | |
+| QA Lead | | | |
 
 ---
 
-## Appendix: Related Specifications
+## Notes
 
-- **WCAG 2.1 Guidelines:**
-  - 2.1.1 Keyboard (Level A) - All functionality available via keyboard
-  - 2.1.2 No Keyboard Trap (Level A) - Focus can move away from component
-  - 2.4.3 Focus Order (Level A) - Focus order preserves meaning
-  - 2.4.7 Focus Visible (Level AA) - Keyboard focus indicator visible
-
-- **ARIA Authoring Practices:**
-  - Dialog (Modal) Pattern: https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/
-  - Grid Pattern (for editable array): https://www.w3.org/WAI/ARIA/apg/patterns/grid/
-
-- **HTML Living Standard:**
-  - Form-associated custom elements: https://html.spec.whatwg.org/multipage/custom-elements.html#form-associated-custom-elements
-
----
-
-## Conclusion
-
-This remediation plan addresses all 15 identified issues across 4 phases, with clear tasks, acceptance criteria, and test plans. The phased approach allows for incremental delivery and reduces risk. Phase 1 (accessibility) should be prioritized for WCAG compliance before production deployment to users who rely on keyboard or screen readers.
-
-**Estimated Timeline:** 4 weeks (with 1-2 developers)
-**Total New Tests:** 36 (114 total, up from 78)
-**Total Lines Changed:** ~500-800 lines (estimated)
-**Risk Level:** Low-Medium (with proper testing and feature flags)
+- All phases are independently deployable
+- Phases 2-4 can be reordered based on business priorities
+- Phase 1 should be completed first due to high impact
+- Consider feature freeze during Phase 1 to minimize merge conflicts
