@@ -270,12 +270,12 @@ tests/
 
 | Done | Test Case ID | FR | Description | Test File |
 |------|--------------|----|----|------------|
-| [ ] | TC-029-01 | FR-029 | Rendering error sets hasError=true | error-handling.test.ts |
-| [ ] | TC-029-02 | FR-029 | lastError contains Error object | error-handling.test.ts |
-| [ ] | TC-029-03 | FR-029 | rendererror event dispatched | error-handling.test.ts |
-| [ ] | TC-029-04 | FR-029 | debug=true logs to console | error-handling.test.ts |
-| [ ] | TC-030-01 | FR-030 | clearError() resets hasError | error-handling.test.ts |
-| [ ] | TC-030-02 | FR-030 | clearError() resets lastError | error-handling.test.ts |
+| [x] | TC-029-01 | FR-029 | Rendering error sets hasError=true | error-handling.test.ts |
+| [x] | TC-029-02 | FR-029 | lastError contains Error object | error-handling.test.ts |
+| [x] | TC-029-03 | FR-029 | rendererror event dispatched | error-handling.test.ts |
+| [x] | TC-029-04 | FR-029 | debug=true logs to console | error-handling.test.ts |
+| [x] | TC-030-01 | FR-030 | clearError() resets hasError | error-handling.test.ts |
+| [x] | TC-030-02 | FR-030 | clearError() resets lastError | error-handling.test.ts |
 
 ### Phase 11: Accessibility (NFR)
 **Priority**: Must-have (NFR-A)
