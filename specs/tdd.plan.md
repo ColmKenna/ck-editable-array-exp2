@@ -180,18 +180,18 @@ tests/
 
 | Done | Test Case ID | FR | Description | Test File |
 |------|--------------|----|----|------------|
-| [ ] | TC-014-01 | FR-014 | moveUp() swaps with row above | reordering.test.ts |
-| [ ] | TC-014-02 | FR-014 | moveUp() no-op for first row | reordering.test.ts |
-| [ ] | TC-014-03 | FR-014 | data-action="move-up" triggers moveUp | reordering.test.ts |
-| [ ] | TC-014-04 | FR-014 | reorder event dispatched | reordering.test.ts |
-| [ ] | TC-014-05 | FR-014 | moveUp blocked when row editing | reordering.test.ts |
-| [ ] | TC-015-01 | FR-015 | moveDown() swaps with row below | reordering.test.ts |
-| [ ] | TC-015-02 | FR-015 | moveDown() no-op for last row | reordering.test.ts |
-| [ ] | TC-015-03 | FR-015 | data-action="move-down" triggers moveDown | reordering.test.ts |
-| [ ] | TC-015-04 | FR-015 | reorder event dispatched | reordering.test.ts |
-| [ ] | TC-016-01 | FR-016 | moveTo() moves row to target position | reordering.test.ts |
-| [ ] | TC-016-02 | FR-016 | moveTo() clamps to valid range | reordering.test.ts |
-| [ ] | TC-016-03 | FR-016 | reorder event dispatched | reordering.test.ts |
+| [x] | TC-014-01 | FR-014 | moveUp() swaps with row above | reordering.test.ts |
+| [x] | TC-014-02 | FR-014 | moveUp() no-op for first row | reordering.test.ts |
+| [x] | TC-014-03 | FR-014 | data-action="move-up" triggers moveUp | reordering.test.ts |
+| [x] | TC-014-04 | FR-014 | reorder event dispatched | reordering.test.ts |
+| [x] | TC-014-05 | FR-014 | moveUp blocked when row editing | reordering.test.ts |
+| [x] | TC-015-01 | FR-015 | moveDown() swaps with row below | reordering.test.ts |
+| [x] | TC-015-02 | FR-015 | moveDown() no-op for last row | reordering.test.ts |
+| [x] | TC-015-03 | FR-015 | data-action="move-down" triggers moveDown | reordering.test.ts |
+| [x] | TC-015-04 | FR-015 | reorder event dispatched | reordering.test.ts |
+| [x] | TC-016-01 | FR-016 | moveTo() moves row to target position | reordering.test.ts |
+| [x] | TC-016-02 | FR-016 | moveTo() clamps to valid range | reordering.test.ts |
+| [x] | TC-016-03 | FR-016 | reorder event dispatched | reordering.test.ts |
 
 ### Phase 6: Selection & Batch Operations (Should-have)
 **Priority**: Should-have
