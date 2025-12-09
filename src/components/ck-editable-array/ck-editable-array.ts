@@ -481,7 +481,17 @@ export class CkEditableArray extends HTMLElement {
     this.render();
   }
 
+  /**
+   * Deep clone a value with safeguards against circular references, 
+   * excessive depth, and too many properties.
+   * @param value - The value to clone
+   * @returns A deep clone of the value
+   */
   private deepClone<T>(value: T): T {
+    // Configuration for clone limits
+    const MAX_DEPTH = 50; // Prevent stack overflow
+    const MAX_PROPERTIES = 10000; // Prevent DoS from objects with millions of properties
+    
     // Use structuredClone when available for broader type support
     try {
       const structuredCloneFn = (
@@ -492,45 +502,82 @@ export class CkEditableArray extends HTMLElement {
       if (typeof structuredCloneFn === 'function') {
         return structuredCloneFn(value as unknown) as T;
       }
-    } catch {
-      // structuredClone may throw for unserializable types; continue to fallback
+    } catch (err) {
+      // structuredClone may throw for unserializable types or circular refs
+      if (this._debug) {
+        console.warn('[ck-editable-array] structuredClone failed, using fallback:', err);
+      }
     }
 
-    // Try a manual deep clone that supports Date and plain objects (and protects against circular refs)
+    // Try a manual deep clone with limits
     const seen = new Map<unknown, unknown>();
+    let propertyCount = 0;
 
-    const clone = (v: unknown): unknown => {
+    const clone = (v: unknown, depth: number): unknown => {
+      // Check depth limit
+      if (depth > MAX_DEPTH) {
+        if (this._debug) {
+          console.warn(`[ck-editable-array] deepClone depth limit (${MAX_DEPTH}) exceeded. Returning shallow copy.`);
+        }
+        throw new Error('Max clone depth exceeded');
+      }
+      
+      // Check property count limit
+      if (propertyCount > MAX_PROPERTIES) {
+        if (this._debug) {
+          console.warn(`[ck-editable-array] deepClone property limit (${MAX_PROPERTIES}) exceeded. Returning shallow copy.`);
+        }
+        throw new Error('Max property count exceeded');
+      }
+
       if (v === null || typeof v !== 'object') return v;
       if (v instanceof Date) return new Date(v.getTime());
-      if (seen.has(v)) return seen.get(v);
+      
+      // Check for circular references
+      if (seen.has(v)) {
+        if (this._debug) {
+          console.warn('[ck-editable-array] Circular reference detected in deepClone');
+        }
+        return seen.get(v);
+      }
+      
       if (Array.isArray(v)) {
         const arrCopy: unknown[] = [];
         seen.set(v, arrCopy);
-        for (const item of v) arrCopy.push(clone(item));
+        propertyCount += v.length;
+        for (const item of v) {
+          arrCopy.push(clone(item, depth + 1));
+        }
         return arrCopy;
       }
+      
       const objCopy: Record<string, unknown> = {};
       seen.set(v, objCopy);
       const objKeys = Object.keys(v as Record<string, unknown>);
-      for (const key of objKeys)
-        objCopy[key] = clone((v as Record<string, unknown>)[key]);
+      propertyCount += objKeys.length;
+      
+      for (const key of objKeys) {
+        objCopy[key] = clone((v as Record<string, unknown>)[key], depth + 1);
+      }
       return objCopy;
     };
 
     try {
-      return clone(value) as unknown as T;
-    } catch {
-      // If manual clone fails, fallback to JSON method (with limitations)
-      try {
-        return JSON.parse(JSON.stringify(value));
-      } catch {
-        // Last resort: return a shallow copy for arrays or object spread
-        if (Array.isArray(value))
-          return [...(value as unknown[])] as unknown as T;
-        if (typeof value === 'object' && value !== null)
-          return { ...(value as Record<string, unknown>) } as T;
-        return value;
+      return clone(value, 0) as unknown as T;
+    } catch (err) {
+      // If manual clone fails, fallback to shallow copy
+      if (this._debug) {
+        console.warn('[ck-editable-array] deepClone failed, returning shallow copy:', err);
       }
+      
+      // Return shallow copy based on type
+      if (Array.isArray(value)) {
+        return [...(value as unknown[])] as unknown as T;
+      }
+      if (typeof value === 'object' && value !== null) {
+        return { ...(value as Record<string, unknown>) } as T;
+      }
+      return value;
     }
   }
 
