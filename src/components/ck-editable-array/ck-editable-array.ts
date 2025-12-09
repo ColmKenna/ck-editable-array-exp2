@@ -1414,6 +1414,37 @@ export class CkEditableArray extends HTMLElement {
   }
 
   // Bind data to elements in a cloned template fragment
+  /**
+   * Sanitizes attribute values to prevent injection attacks.
+   * Removes potentially dangerous characters and limits length.
+   * @param value - The attribute value to sanitize
+   * @returns Sanitized attribute value safe for use in HTML attributes
+   */
+  private sanitizeAttributeValue(value: string): string {
+    if (!value) return '';
+    
+    // Limit length first to avoid processing huge strings
+    const limited = value.substring(0, 255);
+    
+    // Use a single pass with character filtering for better performance
+    let result = '';
+    for (let i = 0; i < limited.length; i++) {
+      const char = limited[i];
+      // Skip dangerous characters: quotes, backslashes, angle brackets
+      if (char === '\\' || char === '"' || char === "'" || char === '<' || char === '>') {
+        continue;
+      }
+      // Replace whitespace with underscore
+      if (char === ' ' || char === '\t' || char === '\n' || char === '\r') {
+        result += '_';
+      } else {
+        result += char;
+      }
+    }
+    
+    return result;
+  }
+
   private bindElementData(
     clone: DocumentFragment,
     rowData: Record<string, unknown>,
@@ -1429,14 +1460,19 @@ export class CkEditableArray extends HTMLElement {
       const value = this.getNestedValue(rowData, path);
       const label =
         el.getAttribute('data-label') || path.split('.').pop() || path;
+      
+      // Sanitize values used in attributes to prevent injection
+      const sanitizedComponentName = this.sanitizeAttributeValue(componentName);
+      const sanitizedPath = this.sanitizeAttributeValue(path);
+      const sanitizedLabel = this.sanitizeAttributeValue(label);
 
       if (el instanceof HTMLInputElement) {
         el.value = this.formatValue(value);
-        el.name = `${componentName}[${index}].${path}`;
-        el.id = `${componentName}_${index}_${path.replace(/\./g, '_')}`;
+        el.name = `${sanitizedComponentName}[${index}].${sanitizedPath}`;
+        el.id = `${sanitizedComponentName}_${index}_${sanitizedPath.replace(/\./g, '_')}`;
 
         if (!el.getAttribute('aria-label') && !el.labels?.length) {
-          el.setAttribute('aria-label', label);
+          el.setAttribute('aria-label', sanitizedLabel);
         }
 
         if (this._readonly) {
@@ -1447,11 +1483,11 @@ export class CkEditableArray extends HTMLElement {
         el instanceof HTMLSelectElement
       ) {
         el.value = this.formatValue(value);
-        el.name = `${componentName}[${index}].${path}`;
-        el.id = `${componentName}_${index}_${path.replace(/\./g, '_')}`;
+        el.name = `${sanitizedComponentName}[${index}].${sanitizedPath}`;
+        el.id = `${sanitizedComponentName}_${index}_${sanitizedPath.replace(/\./g, '_')}`;
 
         if (!el.getAttribute('aria-label')) {
-          el.setAttribute('aria-label', label);
+          el.setAttribute('aria-label', sanitizedLabel);
         }
 
         if (el instanceof HTMLTextAreaElement && this._readonly) {

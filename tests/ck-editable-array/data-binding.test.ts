@@ -276,3 +276,164 @@ describe('FR-009a: Input Name/ID Attribute Generation', () => {
     expect(input?.id).toBe('contacts_0_address_city');
   });
 });
+
+describe('FR-008: Attribute Sanitization (Security)', () => {
+  let element: CkEditableArray;
+
+  beforeEach(() => {
+    element = document.createElement('ck-editable-array') as CkEditableArray;
+  });
+
+  afterEach(() => {
+    element.remove();
+  });
+
+  test('TC-008-S01: Should sanitize component name with special characters', () => {
+    element.setAttribute('name', 'items"onclick="alert(1)');
+    element.innerHTML = `
+      <template data-slot="display">
+        <span data-bind="title"></span>
+      </template>
+      <template data-slot="edit">
+        <input data-bind="title" type="text" />
+      </template>
+    `;
+    document.body.appendChild(element);
+    
+    (element as unknown as { data: { title: string }[] }).data = [
+      { title: 'Test' }
+    ];
+    
+    // Enter edit mode
+    const toggleBtn = element.shadowRoot?.querySelector('[data-action="toggle"]') as HTMLElement;
+    toggleBtn?.click();
+    
+    const input = element.shadowRoot?.querySelector('[data-bind="title"]') as HTMLInputElement;
+    
+    // Verify dangerous characters are removed from name attribute
+    expect(input).toBeDefined();
+    expect(input?.name).toBeDefined();
+    expect(input?.name).not.toContain('"');
+    expect(input?.id).not.toContain('"');
+  });
+
+  test('TC-008-S02: Should sanitize aria-label with quotes', () => {
+    element.innerHTML = `
+      <template data-slot="display">
+        <span data-bind="title"></span>
+      </template>
+      <template data-slot="edit">
+        <input data-bind="title" data-label='Title"Bad' type="text" />
+      </template>
+    `;
+    document.body.appendChild(element);
+    
+    (element as unknown as { data: { title: string }[] }).data = [
+      { title: 'Test' }
+    ];
+    
+    // Enter edit mode
+    const toggleBtn = element.shadowRoot?.querySelector('[data-action="toggle"]') as HTMLElement;
+    toggleBtn?.click();
+    
+    const input = element.shadowRoot?.querySelector('[data-bind="title"]') as HTMLInputElement;
+    const ariaLabel = input?.getAttribute('aria-label');
+    
+    // Verify quotes are removed
+    expect(input).toBeDefined();
+    expect(ariaLabel).toBeDefined();
+    expect(ariaLabel).not.toContain('"');
+  });
+
+  test('TC-008-S03: Should replace spaces with underscores in attributes', () => {
+    element.setAttribute('name', 'my items list');
+    element.innerHTML = `
+      <template data-slot="display">
+        <span data-bind="title"></span>
+      </template>
+      <template data-slot="edit">
+        <input data-bind="title" type="text" />
+      </template>
+    `;
+    document.body.appendChild(element);
+    
+    (element as unknown as { data: { title: string }[] }).data = [
+      { title: 'Test' }
+    ];
+    
+    // Enter edit mode
+    const toggleBtn = element.shadowRoot?.querySelector('[data-action="toggle"]') as HTMLElement;
+    toggleBtn?.click();
+    
+    const input = element.shadowRoot?.querySelector('[data-bind="title"]') as HTMLInputElement;
+    
+    // Verify spaces are replaced with underscores in component name
+    expect(input).toBeDefined();
+    expect(input?.name).toBeDefined();
+    expect(input?.name).toContain('my_items_list');
+  });
+
+  test('TC-008-S04: Should limit attribute length to prevent DoS', () => {
+    const longString = 'a'.repeat(500);
+    element.setAttribute('name', longString);
+    element.innerHTML = `
+      <template data-slot="display">
+        <span data-bind="title"></span>
+      </template>
+      <template data-slot="edit">
+        <input data-bind="title" type="text" />
+      </template>
+    `;
+    document.body.appendChild(element);
+    
+    (element as unknown as { data: { title: string }[] }).data = [
+      { title: 'Test' }
+    ];
+    
+    // Enter edit mode
+    const toggleBtn = element.shadowRoot?.querySelector('[data-action="toggle"]') as HTMLElement;
+    toggleBtn?.click();
+    
+    const input = element.shadowRoot?.querySelector('[data-bind="title"]') as HTMLInputElement;
+    
+    // Verify length is limited - the sanitized component name should be <= 255
+    // The full attribute will have additional characters like [0].title
+    expect(input).toBeDefined();
+    expect(input?.name).toBeDefined();
+    const sanitizedPart = input?.name.split('[')[0];
+    expect(sanitizedPart?.length).toBeLessThanOrEqual(255);
+  });
+
+  test('TC-008-S05: Should sanitize angle brackets to prevent tag injection', () => {
+    element.setAttribute('name', 'items<script>');
+    element.innerHTML = `
+      <template data-slot="display">
+        <span data-bind="title"></span>
+      </template>
+      <template data-slot="edit">
+        <input data-bind="title" data-label="<img src=x>" type="text" />
+      </template>
+    `;
+    document.body.appendChild(element);
+    
+    (element as unknown as { data: { title: string }[] }).data = [
+      { title: 'Test' }
+    ];
+    
+    // Enter edit mode
+    const toggleBtn = element.shadowRoot?.querySelector('[data-action="toggle"]') as HTMLElement;
+    toggleBtn?.click();
+    
+    const input = element.shadowRoot?.querySelector('[data-bind="title"]') as HTMLInputElement;
+    const ariaLabel = input?.getAttribute('aria-label');
+    
+    // Verify angle brackets are removed
+    expect(input).toBeDefined();
+    expect(input?.name).toBeDefined();
+    expect(input?.name).not.toContain('<');
+    expect(input?.name).not.toContain('>');
+    expect(ariaLabel).toBeDefined();
+    expect(ariaLabel).not.toContain('<');
+    expect(ariaLabel).not.toContain('>');
+  });
+});
