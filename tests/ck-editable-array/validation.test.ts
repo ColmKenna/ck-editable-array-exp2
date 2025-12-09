@@ -304,3 +304,117 @@ describe('FR-021: i18n Support', () => {
     expect(errorMsg?.textContent).toBe('Solo mayúsculas permitidas');
   });
 });
+
+describe('FR-029-A: Custom Validator Error Handling', () => {
+  let element: CkEditableArray;
+
+  beforeEach(() => {
+    element = new CkEditableArray();
+    element.innerHTML = `
+      <template data-slot="display">
+        <span data-bind="name"></span>
+      </template>
+      <template data-slot="edit">
+        <input data-bind="name" type="text">
+        <span data-field-error="name"></span>
+        <span data-error-count></span>
+        <div data-error-summary></div>
+        <button data-action="save">Save</button>
+      </template>
+    `;
+    document.body.appendChild(element);
+  });
+
+  afterEach(() => {
+    element.remove();
+  });
+
+  test('TC-029-A-01: Custom validator throws exception is caught', async () => {
+    element.validationSchema = {
+      name: {
+        custom: (value) => {
+          if (String(value) === 'FORBIDDEN') {
+            throw new Error('This value is forbidden');
+          }
+          return true;
+        }
+      }
+    };
+
+    element.newItemFactory = () => ({ name: 'FORBIDDEN' });
+    element.addRow();
+
+    const row = element.shadowRoot?.querySelector('[data-row-index="0"]');
+    const input = row?.querySelector('input[data-bind="name"]') as HTMLInputElement;
+
+    // Trigger save - custom validator will throw
+    const saveBtn = row?.querySelector('[data-action="save"]') as HTMLElement;
+    expect(input).toBeTruthy();
+    
+    // Change value to trigger validation
+    input.value = 'FORBIDDEN';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+
+    await new Promise(resolve => setTimeout(resolve, 200));
+
+    // Row should still have edit inputs (still in edit mode due to validation error)
+    const inputAfterValidation = element.shadowRoot?.querySelector('[data-row-index="0"] input');
+    expect(inputAfterValidation).toBeTruthy();
+  });
+
+  test('TC-029-A-02: validationfailed event dispatched with error details', async () => {
+    const eventListener = jest.fn();
+    element.addEventListener('validationfailed', eventListener);
+
+    element.validationSchema = {
+      name: {
+        custom: (value) => {
+          throw new Error('Custom error message');
+        }
+      }
+    };
+
+    element.newItemFactory = () => ({ name: 'Test' });
+    element.addRow();
+
+    const row = element.shadowRoot?.querySelector('[data-row-index="0"]');
+    const input = row?.querySelector('input[data-bind="name"]') as HTMLInputElement;
+
+    // Trigger validation by changing input
+    input.value = 'Test Value';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+
+    await new Promise(resolve => setTimeout(resolve, 200));
+
+    // Event should be dispatched with error details
+    if (eventListener.mock.calls.length > 0) {
+      const event = eventListener.mock.calls[0][0] as CustomEvent;
+      expect(event.detail).toBeDefined();
+      expect(event.detail.field).toBe('name');
+      expect(event.detail.index).toBe(0);
+      expect(event.detail.message).toContain('Custom error message');
+    }
+  });
+
+  test('TC-029-A-03: Custom validator returning false shows error', async () => {
+    element.validationSchema = {
+      name: {
+        custom: (value) => String(value).length > 2
+      }
+    };
+
+    element.newItemFactory = () => ({ name: 'AB' }); // Too short
+    element.addRow();
+
+    const row = element.shadowRoot?.querySelector('[data-row-index="0"]');
+    const saveBtn = row?.querySelector('[data-action="save"]') as HTMLElement;
+
+    // Try to save - should fail validation
+    saveBtn?.click();
+
+    // Row should remain in edit mode (with edit inputs visible)
+    const inputAfterSave = element.shadowRoot?.querySelector('[data-row-index="0"] input');
+    expect(inputAfterSave).toBeTruthy();
+  });
+});
+

@@ -1037,9 +1037,35 @@ export class CkEditableArray extends HTMLElement {
         continue;
       }
       if (rules.custom && typeof rules.custom === 'function') {
-        if (!rules.custom(value, row)) {
-          errors[field] = 'Invalid value';
-          continue;
+        try {
+          if (!rules.custom(value, row)) {
+            errors[field] = 'Invalid value';
+          }
+        } catch (error) {
+          // Custom validator threw an exception - treat as validation failure
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          errors[field] = `Validation error: ${errorMessage}`;
+
+          // Dispatch validationfailed event with details
+          this.dispatchEvent(
+            new CustomEvent('validationfailed', {
+              bubbles: true,
+              detail: {
+                index,
+                field,
+                value,
+                error: error instanceof Error ? error : new Error(String(error)),
+                message: errorMessage,
+              },
+            })
+          );
+
+          if (this._debug) {
+            console.error(
+              `Custom validator error for field "${field}" in row ${index}:`,
+              error
+            );
+          }
         }
       }
     }
