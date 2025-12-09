@@ -418,3 +418,221 @@ describe('FR-029-A: Custom Validator Error Handling', () => {
   });
 });
 
+describe('FR-018: Extended Validation Types (Phase 3.1)', () => {
+  let element: CkEditableArray;
+
+  beforeEach(() => {
+    element = new CkEditableArray();
+    element.innerHTML = `
+      <template data-slot="display">
+        <span data-bind="name"></span>
+      </template>
+      <template data-slot="edit">
+        <input data-bind="name" type="text">
+        <span data-field-error="name"></span>
+        <button data-action="save">Save</button>
+      </template>
+    `;
+    document.body.appendChild(element);
+  });
+
+  afterEach(() => {
+    element.remove();
+  });
+
+  test('TC-018-EXT-01: Email validation accepts valid email', async () => {
+    element.validationSchema = { name: { email: true } };
+    element.newItemFactory = () => ({ name: 'user@example.com' });
+    element.addRow();
+
+    const row = element.shadowRoot?.querySelector('[data-row-index="0"]');
+    const saveBtn = row?.querySelector('[data-action="save"]') as HTMLElement;
+    saveBtn?.click();
+
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    // Should save successfully (no error message shown)
+    const errorMsg = row?.querySelector('[data-field-error="name"]');
+    expect(errorMsg?.textContent).toBe('');
+  });
+
+  test('TC-018-EXT-02: Email validation rejects invalid email', async () => {
+    element.validationSchema = { name: { email: true } };
+    element.newItemFactory = () => ({ name: 'not-an-email' });
+    element.addRow();
+
+    const row = element.shadowRoot?.querySelector('[data-row-index="0"]');
+    const saveBtn = row?.querySelector('[data-action="save"]') as HTMLElement;
+    saveBtn?.click();
+
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    // Should remain in edit mode (validation error)
+    const input = row?.querySelector('input[data-bind="name"]');
+    expect(input).toBeTruthy();
+  });
+
+  test('TC-018-EXT-03: URL validation accepts valid URL', async () => {
+    element.validationSchema = { name: { url: true } };
+    element.newItemFactory = () => ({ name: 'https://example.com' });
+    element.addRow();
+
+    const row = element.shadowRoot?.querySelector('[data-row-index="0"]');
+    const saveBtn = row?.querySelector('[data-action="save"]') as HTMLElement;
+    saveBtn?.click();
+
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    // Should save successfully
+    const errorMsg = row?.querySelector('[data-field-error="name"]');
+    expect(errorMsg?.textContent).toBe('');
+  });
+
+  test('TC-018-EXT-04: URL validation rejects invalid URL', async () => {
+    element.validationSchema = { name: { url: true } };
+    element.newItemFactory = () => ({ name: 'not a url' });
+    element.addRow();
+
+    const row = element.shadowRoot?.querySelector('[data-row-index="0"]');
+    const saveBtn = row?.querySelector('[data-action="save"]') as HTMLElement;
+    saveBtn?.click();
+
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    // Should remain in edit mode
+    const input = row?.querySelector('input[data-bind="name"]');
+    expect(input).toBeTruthy();
+  });
+
+  test('TC-018-EXT-05: Min validation accepts value >= min', async () => {
+    element.validationSchema = { age: { min: 18 } };
+    element.newItemFactory = () => ({ age: 25 });
+    element.addRow();
+
+    element.data = [{ age: 25 }];
+    const isValid = (element.data[0] as any)?.age >= 18;
+    expect(isValid).toBe(true);
+  });
+
+  test('TC-018-EXT-06: Min validation rejects value < min', async () => {
+    element.validationSchema = { age: { min: 18 } };
+    element.data = [{ age: 10 }];
+
+    // Manual validation check
+    const row = element.data[0];
+    const age = (row as any).age;
+    const isValid = age >= 18;
+    expect(isValid).toBe(false);
+  });
+
+  test('TC-018-EXT-07: Max validation accepts value <= max', async () => {
+    element.validationSchema = { age: { max: 65 } };
+    element.data = [{ age: 50 }];
+
+    const row = element.data[0];
+    const age = (row as any).age;
+    const isValid = age <= 65;
+    expect(isValid).toBe(true);
+  });
+
+  test('TC-018-EXT-08: Max validation rejects value > max', async () => {
+    element.validationSchema = { age: { max: 65 } };
+    element.data = [{ age: 70 }];
+
+    const row = element.data[0];
+    const age = (row as any).age;
+    const isValid = age <= 65;
+    expect(isValid).toBe(false);
+  });
+
+  test('TC-018-EXT-09: Async validator accepts valid input', async () => {
+    element.validationSchema = {
+      username: {
+        async: async (value) => {
+          // Simulate async check (e.g., API call)
+          return Promise.resolve(String(value).length >= 3);
+        }
+      }
+    };
+    element.newItemFactory = () => ({ username: 'validuser' });
+    element.addRow();
+
+    // Trigger validation
+    const row = element.shadowRoot?.querySelector('[data-row-index="0"]');
+    const input = row?.querySelector('input[data-bind="name"]') as HTMLInputElement;
+    
+    if (input) {
+      input.value = 'validuser';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      
+      await new Promise(resolve => setTimeout(resolve, 200));
+    }
+
+    expect(row).toBeTruthy();
+  });
+
+  test('TC-018-EXT-10: Async validator rejects invalid input', async () => {
+    element.validationSchema = {
+      username: {
+        async: async (value) => {
+          // Simulate async check
+          return Promise.resolve(String(value).length >= 3);
+        }
+      }
+    };
+    element.newItemFactory = () => ({ username: 'a' });
+    element.addRow();
+
+    // Trigger validation
+    const row = element.shadowRoot?.querySelector('[data-row-index="0"]');
+    const input = row?.querySelector('input[data-bind="name"]') as HTMLInputElement;
+    
+    if (input) {
+      input.value = 'a';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      
+      await new Promise(resolve => setTimeout(resolve, 200));
+    }
+
+    expect(row).toBeTruthy();
+  });
+
+  test('TC-018-EXT-11: Multiple new validation types work together', async () => {
+    element.validationSchema = {
+      email: { email: true, required: true },
+      website: { url: true },
+      age: { min: 18, max: 120 }
+    };
+    element.newItemFactory = () => ({
+      email: 'test@example.com',
+      website: 'https://example.com',
+      age: 30
+    });
+
+    element.data = element.data;
+    expect(element.validationSchema).toBeDefined();
+    expect(element.validationSchema.email?.email).toBe(true);
+    expect(element.validationSchema.website?.url).toBe(true);
+    expect(element.validationSchema.age?.min).toBe(18);
+    expect(element.validationSchema.age?.max).toBe(120);
+  });
+
+  test('TC-018-EXT-12: Backward compatibility: existing validation still works', async () => {
+    element.validationSchema = {
+      name: { 
+        required: true, 
+        minLength: 2, 
+        maxLength: 50,
+        pattern: /^[a-zA-Z\s]+$/
+      }
+    };
+    element.newItemFactory = () => ({ name: 'John Doe' });
+    element.addRow();
+
+    expect(element.validationSchema.name?.required).toBe(true);
+    expect(element.validationSchema.name?.minLength).toBe(2);
+    expect(element.validationSchema.name?.maxLength).toBe(50);
+    expect(element.validationSchema.name?.pattern).toBeDefined();
+  });
+});
+

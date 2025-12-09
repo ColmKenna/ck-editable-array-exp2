@@ -78,8 +78,13 @@ export class CkEditableArray extends HTMLElement {
       required?: boolean;
       minLength?: number;
       maxLength?: number;
+      min?: number; // for numeric validation
+      max?: number; // for numeric validation
+      email?: boolean; // simple email validation
+      url?: boolean; // simple URL validation
       pattern?: RegExp;
       custom?: (value: unknown, row: Record<string, unknown>) => boolean;
+      async?: (value: unknown, row: Record<string, unknown>) => Promise<boolean>; // async validator
     }
   > = {};
 
@@ -97,8 +102,13 @@ export class CkEditableArray extends HTMLElement {
       required?: boolean;
       minLength?: number;
       maxLength?: number;
+      min?: number;
+      max?: number;
+      email?: boolean;
+      url?: boolean;
       pattern?: RegExp;
       custom?: (value: unknown, row: Record<string, unknown>) => boolean;
+      async?: (value: unknown, row: Record<string, unknown>) => Promise<boolean>;
     }
   > {
     return this._validationSchema;
@@ -111,8 +121,13 @@ export class CkEditableArray extends HTMLElement {
         required?: boolean;
         minLength?: number;
         maxLength?: number;
+        min?: number;
+        max?: number;
+        email?: boolean;
+        url?: boolean;
         pattern?: RegExp;
         custom?: (value: unknown, row: Record<string, unknown>) => boolean;
+        async?: (value: unknown, row: Record<string, unknown>) => Promise<boolean>;
       }
     >
   ) {
@@ -1216,6 +1231,45 @@ export class CkEditableArray extends HTMLElement {
           );
         continue;
       }
+      if (rules.min !== undefined && !isNaN(Number(value))) {
+        const numValue = Number(value);
+        if (numValue < rules.min) {
+          errors[field] =
+            (this._i18n.min || 'Minimum value is {min}').replace(
+              '{min}',
+              String(rules.min)
+            );
+          continue;
+        }
+      }
+      if (rules.max !== undefined && !isNaN(Number(value))) {
+        const numValue = Number(value);
+        if (numValue > rules.max) {
+          errors[field] =
+            (this._i18n.max || 'Maximum value is {max}').replace(
+              '{max}',
+              String(rules.max)
+            );
+          continue;
+        }
+      }
+      if (rules.email && strValue) {
+        const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailPattern.test(strValue)) {
+          errors[field] =
+            this._i18n.email || 'Invalid email address';
+          continue;
+        }
+      }
+      if (rules.url && strValue) {
+        try {
+          new URL(strValue);
+        } catch {
+          errors[field] =
+            this._i18n.url || 'Invalid URL';
+          continue;
+        }
+      }
       if (rules.pattern && !rules.pattern.test(strValue)) {
         errors[field] =
           this._i18n.pattern || 'Invalid format';
@@ -1253,9 +1307,57 @@ export class CkEditableArray extends HTMLElement {
           }
         }
       }
+      // NOTE: Async validators are handled separately in async context
+      // See validateRowAsync() for async validation support
     }
 
     return { isValid: Object.keys(errors).length === 0, errors };
+  }
+
+  /**
+   * Async validation for fields with async validators.
+   * Runs all async validators in parallel and returns combined errors.
+   */
+  private async validateRowAsync(index: number, syncErrors: Record<string, string>): Promise<Record<string, string>> {
+    const row = this._data[index];
+    if (!row) return syncErrors;
+
+    const errors = { ...syncErrors };
+    const asyncValidationPromises: Promise<{ field: string; error?: string }>[] = [];
+
+    for (const [field, rules] of Object.entries(this._validationSchema)) {
+      if (rules.async && typeof rules.async === 'function') {
+        const value = this.getNestedValue(row, field);
+        asyncValidationPromises.push(
+          (async () => {
+            try {
+              const isValid = await rules.async!(value, row);
+              if (!isValid) {
+                return { field, error: 'Invalid value' };
+              }
+              return { field };
+            } catch (error) {
+              const errorMessage = error instanceof Error ? error.message : String(error);
+              return { field, error: `Async validation error: ${errorMessage}` };
+            }
+          })()
+        );
+      }
+    }
+
+    if (asyncValidationPromises.length > 0) {
+      const results = await Promise.all(asyncValidationPromises);
+      results.forEach(result => {
+        if (result.error) {
+          errors[result.field] = result.error;
+        } else {
+          // Remove error if async validator passed
+          delete errors[result.field];
+        }
+      });
+    }
+
+    return errors;
   }
 
   // Update validation UI state for a row
