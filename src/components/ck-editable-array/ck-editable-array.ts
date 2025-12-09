@@ -38,6 +38,7 @@ export class CkEditableArray extends HTMLElement {
   private _displayTemplate: HTMLTemplateElement | null = null;
   private _editTemplate: HTMLTemplateElement | null = null;
   private _templatesInitialized = false;
+  private _templateErrorDispatched = false;
   // Cache for validated colors to avoid repeated DOM element creation
   private _colorCache: Map<string, string> = new Map();
   // Debounce timeout for validation
@@ -1834,10 +1835,45 @@ export class CkEditableArray extends HTMLElement {
   /**
    * Creates and returns the modal element for modal editing mode.
    * Caches the modal reference to avoid recreation on subsequent renders.
+   * Dispatches templateerror event if modal mode is enabled without edit template.
    * @returns The modal element or null if not in modal mode
    */
   private setupModalElement(): HTMLElement | null {
     if (!this._modalEdit) {
+      return null;
+    }
+
+    // Check if edit template is missing when modal mode is enabled
+    if (!this._editTemplate && this._templatesInitialized && !this._templateErrorDispatched) {
+      const errorMessage = 'Modal edit mode enabled but no edit template (<template data-slot="edit">) found';
+      
+      // Mark error as dispatched to prevent duplicates
+      this._templateErrorDispatched = true;
+      
+      // Dispatch templateerror event
+      this.dispatchEvent(
+        new CustomEvent('templateerror', {
+          detail: {
+            message: errorMessage,
+            mode: 'modal',
+            timestamp: Date.now()
+          },
+          bubbles: true,
+          composed: true
+        })
+      );
+      
+      // Log in debug mode
+      if (this._debug) {
+        console.warn(`[ck-editable-array] ${errorMessage}`);
+      }
+      
+      // Return null to prevent modal creation without template
+      return null;
+    }
+    
+    // If template error was previously dispatched but template is still missing, skip modal setup
+    if (!this._editTemplate && this._templateErrorDispatched) {
       return null;
     }
 

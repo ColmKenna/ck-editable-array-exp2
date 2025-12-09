@@ -932,3 +932,115 @@ describe('FR-026-A: Modal Focus Trap (WCAG 2.1 Level AA)', () => {
   });
 });
 
+describe('FR-026: Modal Template Error Handling', () => {
+  let element: CkEditableArray;
+
+  beforeEach(() => {
+    element = document.createElement('ck-editable-array') as CkEditableArray;
+  });
+
+  afterEach(() => {
+    element.remove();
+  });
+
+  test('TC-026-TE-01: Should dispatch templateerror when modal mode enabled without edit template', async () => {
+    // Only provide display template, no edit template
+    element.innerHTML = `
+      <template data-slot="display">
+        <span data-bind="name"></span>
+        <button data-action="toggle">Edit</button>
+      </template>
+    `;
+    
+    // Create promise to wait for event
+    const eventPromise = new Promise<CustomEvent>((resolve) => {
+      element.addEventListener('templateerror', (event: Event) => {
+        resolve(event as CustomEvent);
+      }, { once: true });
+    });
+
+    document.body.appendChild(element);
+    
+    // Enable modal edit mode - this should trigger the error
+    (element as unknown as { modalEdit: boolean }).modalEdit = true;
+    
+    type RowData = { name: string };
+    (element as unknown as { data: RowData[] }).data = [{ name: 'Alice' }];
+    
+    // Wait for the event
+    const customEvent = await eventPromise;
+    
+    expect(customEvent.detail).toBeDefined();
+    expect(customEvent.detail.message).toContain('Modal edit mode enabled');
+    expect(customEvent.detail.message).toContain('no edit template');
+    expect(customEvent.detail.mode).toBe('modal');
+    expect(customEvent.detail.timestamp).toBeGreaterThan(0);
+  });
+
+  test('TC-026-TE-02: Should not dispatch templateerror when edit template is present', async () => {
+    element.innerHTML = `
+      <template data-slot="display">
+        <span data-bind="name"></span>
+        <button data-action="toggle">Edit</button>
+      </template>
+      <template data-slot="edit">
+        <input data-bind="name" type="text" />
+        <button data-action="save">Save</button>
+        <button data-action="cancel">Cancel</button>
+      </template>
+    `;
+    
+    let errorFired = false;
+    
+    // Listen for templateerror event
+    element.addEventListener('templateerror', () => {
+      errorFired = true;
+    });
+
+    document.body.appendChild(element);
+    
+    // Enable modal edit mode with proper templates
+    (element as unknown as { modalEdit: boolean }).modalEdit = true;
+    
+    type RowData = { name: string };
+    (element as unknown as { data: RowData[] }).data = [{ name: 'Alice' }];
+    
+    // Give time for render to complete
+    await new Promise(resolve => setTimeout(resolve, 50));
+    
+    expect(errorFired).toBe(false);
+  });
+
+  test('TC-026-TE-03: Should log warning in debug mode when template missing', async () => {
+    // Only provide display template, no edit template
+    element.innerHTML = `
+      <template data-slot="display">
+        <span data-bind="name"></span>
+      </template>
+    `;
+    
+    const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+    
+    document.body.appendChild(element);
+    
+    // Enable debug mode
+    (element as unknown as { debug: boolean }).debug = true;
+    
+    // Enable modal edit mode - this should trigger the warning
+    (element as unknown as { modalEdit: boolean }).modalEdit = true;
+    
+    type RowData = { name: string };
+    (element as unknown as { data: RowData[] }).data = [{ name: 'Alice' }];
+    
+    // Give time for render to complete
+    await new Promise(resolve => setTimeout(resolve, 50));
+    
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.stringContaining('[ck-editable-array]')
+    );
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.stringContaining('Modal edit mode enabled')
+    );
+    consoleSpy.mockRestore();
+  });
+});
