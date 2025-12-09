@@ -352,17 +352,104 @@ export class CkEditableArray extends HTMLElement {
   }
 
   // FR-016: Move row to specific position
+  /**
+   * Moves a row from one index to another.
+   * Dispatches moveerror event if indices are invalid.
+   * @param fromIndex - Source index of the row to move
+   * @param toIndex - Destination index for the row
+   */
   moveTo(fromIndex: number, toIndex: number): void {
     // Block if readonly or editing
-    if (this._readonly || this.getEditingRowIndex() !== -1) return;
+    if (this._readonly) {
+      this.dispatchEvent(
+        new CustomEvent('moveerror', {
+          bubbles: true,
+          composed: true,
+          detail: {
+            fromIndex,
+            toIndex,
+            reason: 'readonly',
+            message: 'Cannot move rows when component is in readonly mode',
+            timestamp: Date.now()
+          }
+        })
+      );
+      return;
+    }
+    
+    if (this.getEditingRowIndex() !== -1) {
+      this.dispatchEvent(
+        new CustomEvent('moveerror', {
+          bubbles: true,
+          composed: true,
+          detail: {
+            fromIndex,
+            toIndex,
+            reason: 'editing',
+            message: 'Cannot move rows while a row is being edited',
+            timestamp: Date.now()
+          }
+        })
+      );
+      return;
+    }
+    
     // Validate fromIndex
-    if (fromIndex < 0 || fromIndex >= this._data.length) return;
+    if (fromIndex < 0 || fromIndex >= this._data.length) {
+      this.dispatchEvent(
+        new CustomEvent('moveerror', {
+          bubbles: true,
+          composed: true,
+          detail: {
+            fromIndex,
+            toIndex,
+            reason: 'invalid_from_index',
+            message: `Invalid fromIndex: ${fromIndex}. Must be between 0 and ${this._data.length - 1}`,
+            timestamp: Date.now()
+          }
+        })
+      );
+      
+      if (this._debug) {
+        console.warn(
+          `[ck-editable-array] moveTo: Invalid fromIndex ${fromIndex}. ` +
+          `Must be between 0 and ${this._data.length - 1}`
+        );
+      }
+      
+      return;
+    }
 
     // Clamp toIndex to valid range
     const clampedToIndex = Math.max(
       0,
       Math.min(toIndex, this._data.length - 1)
     );
+
+    // Warn if toIndex was clamped
+    if (toIndex !== clampedToIndex) {
+      this.dispatchEvent(
+        new CustomEvent('moveerror', {
+          bubbles: true,
+          composed: true,
+          detail: {
+            fromIndex,
+            toIndex,
+            clampedToIndex,
+            reason: 'invalid_to_index',
+            message: `Invalid toIndex: ${toIndex}. Clamped to ${clampedToIndex}`,
+            timestamp: Date.now()
+          }
+        })
+      );
+      
+      if (this._debug) {
+        console.warn(
+          `[ck-editable-array] moveTo: Invalid toIndex ${toIndex}. ` +
+          `Clamped to ${clampedToIndex}`
+        );
+      }
+    }
 
     // No-op if moving to same position
     if (fromIndex === clampedToIndex) return;
