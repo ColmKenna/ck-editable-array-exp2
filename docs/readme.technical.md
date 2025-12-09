@@ -219,4 +219,247 @@ The component includes a `ck-hidden` CSS class for display: none:
 
 This can be customized via CSS custom properties if needed in the component's stylesheet.
 
+---
+
+## CSS Class Reference (Phase 4.1)
+
+The CkEditableArray component applies various CSS classes to elements for styling and state management. This reference documents all customizable CSS classes.
+
+### Wrapper & Row Classes
+
+| Class | Applied To | Purpose | Customization |
+|-------|-----------|---------|----------------|
+| `.ck-wrapper` | Root shadow DOM container | Main wrapper element | Style the entire table container |
+| `.ck-row` | Each row div | Base styling for rows | Style row containers |
+| `.ck-row--editing` | Row in edit mode | Highlight edited rows | Show different background/border when editing |
+| `.ck-row--selected` | Selected rows | Highlight selected rows | Show selection state (e.g., highlight color) |
+| `.ck-row--deleted` | Soft-deleted rows | Show deleted state | Gray out or hide deleted rows (display: none) |
+
+### Field State Classes
+
+| Class | Applied To | Purpose | Customization |
+|-------|-----------|---------|----------------|
+| `.ck-field-error` | Input/textarea with validation error | Show field error state | Red border, error background, icon, etc. |
+| `.ck-field-valid` | Input/textarea that passed validation | Show valid state | Green border, checkmark icon, etc. |
+| `.ck-field-required` | Required fields | Mark required fields | Add asterisk (*) using CSS ::after |
+| `.ck-field-invalid-pattern` | Pattern validation failure | Specific error type | Different styling for pattern vs other errors |
+
+### Display & Edit Mode Classes
+
+| Class | Applied To | Purpose | Customization |
+|-------|-----------|---------|----------------|
+| `.ck-display` | Display template content | Show when not editing | Default: `display: contents` |
+| `.ck-edit` | Edit template content | Show when editing | Default: `display: contents` |
+| `.ck-hidden` | Hidden rows/fields | Hide with display: none | Can be overridden for custom hiding logic |
+
+### Modal Classes
+
+| Class | Applied To | Purpose | Customization |
+|-------|-----------|---------|----------------|
+| `.ck-modal` | Modal overlay | Background overlay | Style the modal backdrop (semi-transparent) |
+| `.ck-modal-content` | Modal dialog content | Modal dialog box | Style modal size, border-radius, shadow, etc. |
+| `.ck-modal-header` | Modal title area | Header section | Style the modal title/header area |
+| `.ck-modal-body` | Modal form content | Body section | Style the form inside modal |
+| `.ck-modal-footer` | Modal actions footer | Footer section | Style button area |
+
+### Button & Control Classes
+
+| Class | Applied To | Purpose | Customization |
+|-------|-----------|---------|----------------|
+| `.ck-btn` | All buttons | Base button styling | Style buttons (padding, font, hover) |
+| `.ck-btn--primary` | Save buttons | Primary action | Style save button as primary CTA |
+| `.ck-btn--secondary` | Cancel/Delete buttons | Secondary action | Style cancel/delete as secondary |
+| `.ck-btn--icon` | Icon buttons | Icon-only buttons | Style icon buttons (square, circular) |
+
+### Selection & Checkbox Classes
+
+| Class | Applied To | Purpose | Customization |
+|-------|-----------|---------|----------------|
+| `.ck-checkbox` | Selection checkboxes | Row selection control | Style checkboxes (size, color) |
+| `.ck-checkbox--checked` | Selected row checkbox | Checked state | Show when row is selected |
+
+### Error & Validation Classes
+
+| Class | Applied To | Purpose | Customization |
+|-------|-----------|---------|----------------|
+| `.ck-error-summary` | Error message container | Show all errors for a row | Style error box (red background, padding) |
+| `.ck-error-message` | Individual error message | Single field error | Style individual error text |
+| `.ck-validation-pending` | Row being validated | Show validation in progress | Opacity/spinner animation |
+
+### State Classes
+
+| Class | Applied To | Purpose | Customization |
+|-------|-----------|---------|----------------|
+| `.ck-readonly` | Component when readonly | Read-only state | Disable pointer events, gray out, etc. |
+| `.ck-busy` | Component during processing | Processing state | Show loading spinner, disable interactions |
+| `.ck-error` | Component with error | Error state | Border color, background, error icon |
+
+---
+
+## CSS Customization Examples
+
+### Example 1: Custom Row Styling
+
+```css
+/* Highlight edited rows with light blue background */
+ck-editable-array::part(row--editing) .ck-row--editing {
+  background-color: #e3f2fd;
+  border-left: 4px solid #2196F3;
+}
+
+/* Highlight selected rows */
+ck-editable-array::part(row--selected) .ck-row--selected {
+  background-color: #fff3e0;
+}
+
+/* Gray out deleted rows */
+ck-editable-array::part(row--deleted) .ck-row--deleted {
+  opacity: 0.5;
+  text-decoration: line-through;
+}
+```
+
+### Example 2: Custom Validation Styling
+
+```css
+/* Red border for fields with errors */
+.ck-field-error {
+  border: 2px solid #f44336 !important;
+  background-color: #ffebee;
+}
+
+/* Green border for valid fields */
+.ck-field-valid {
+  border: 2px solid #4caf50 !important;
+}
+
+/* Asterisk for required fields */
+.ck-field-required::after {
+  content: " *";
+  color: red;
+  font-weight: bold;
+}
+
+/* Error message styling */
+.ck-error-message {
+  color: #d32f2f;
+  font-size: 0.875rem;
+  margin-top: 4px;
+}
+```
+
+### Example 3: Custom Modal Styling
+
+```css
+/* Dark modal backdrop */
+.ck-modal {
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+/* Styled modal dialog */
+.ck-modal-content {
+  border-radius: 8px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  max-width: 600px;
+}
+
+/* Modal header styling */
+.ck-modal-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 20px;
+  border-radius: 8px 8px 0 0;
+  font-size: 1.25rem;
+  font-weight: bold;
+}
+```
+
+### Example 4: Custom Button Styling
+
+```css
+/* Primary buttons (Save) */
+.ck-btn--primary {
+  background-color: #2196F3;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.ck-btn--primary:hover {
+  background-color: #1976D2;
+}
+
+.ck-btn--primary:disabled {
+  background-color: #bdbdbd;
+  cursor: not-allowed;
+}
+
+/* Secondary buttons (Cancel) */
+.ck-btn--secondary {
+  background-color: #f5f5f5;
+  color: #333;
+  border: 1px solid #ddd;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.ck-btn--secondary:hover {
+  background-color: #eeeeee;
+}
+```
+
+### Example 5: Responsive Design
+
+```css
+/* Stack columns on mobile */
+@media (max-width: 768px) {
+  .ck-wrapper {
+    font-size: 0.875rem;
+  }
+  
+  .ck-row {
+    display: block;
+    border-bottom: 2px solid #ddd;
+    margin-bottom: 1rem;
+  }
+  
+  /* Hide action column label on mobile */
+  .ck-action-header {
+    display: none;
+  }
+}
+```
+
+---
+
+## Design System Integration
+
+The component uses semantic CSS class names that follow BEM (Block Element Modifier) conventions:
+
+- **Block**: `.ck-wrapper`, `.ck-row`, `.ck-modal`
+- **Element**: `.ck-row__cell`, `.ck-modal__header`, `.ck-btn__icon`
+- **Modifier**: `.ck-row--editing`, `.ck-row--selected`, `.ck-btn--primary`
+
+This makes it easy to override styles in your own CSS while maintaining consistency.
+
+### CSS Custom Properties (CSS Variables)
+
+For future versions, consider using CSS custom properties for theming:
+
+```css
+:root {
+  --ck-primary-color: #2196F3;
+  --ck-error-color: #f44336;
+  --ck-success-color: #4caf50;
+  --ck-border-color: #ddd;
+  --ck-row-height: 48px;
+  --ck-modal-backdrop: rgba(0, 0, 0, 0.5);
+}
+```
+
+---
 
