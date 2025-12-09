@@ -43,6 +43,9 @@ export class CkEditableArray extends HTMLElement {
   private _colorCache: Map<string, string> = new Map();
   // Debounce timeout for validation
   private _validationTimeout: ReturnType<typeof setTimeout> | null = null;
+  // RAF throttling for input validation (Phase 3.3)
+  private _validationRafId: number | null = null;
+  private _pendingValidationIndices: Set<number> = new Set();
   // Modal focus trap handler
   private handleModalKeydown = (e: KeyboardEvent): void => {
     this.handleModalFocusTrap(e);
@@ -710,6 +713,15 @@ export class CkEditableArray extends HTMLElement {
       clearTimeout(this._validationTimeout);
       this._validationTimeout = null;
     }
+
+    // Clear any pending RAF validation request
+    if (this._validationRafId !== null) {
+      cancelAnimationFrame(this._validationRafId);
+      this._validationRafId = null;
+    }
+
+    // Clear pending validation indices
+    this._pendingValidationIndices.clear();
 
     // Clear history to prevent memory leaks
     this._history = [];
@@ -1984,6 +1996,11 @@ export class CkEditableArray extends HTMLElement {
   };
 
   // Event delegation handler for input changes
+  /**
+   * Handles input events on form fields with RAF-based batching.
+   * Uses requestAnimationFrame to batch validation updates during rapid input changes.
+   * Reduces excessive validation calls and improves performance.
+   */
   private handleWrapperInput = (e: Event): void => {
     const target = e.target as HTMLElement;
     if (
@@ -2002,15 +2019,31 @@ export class CkEditableArray extends HTMLElement {
     if (index >= 0 && this._data[index]) {
       this.setNestedValue(this._data[index], path, target.value);
 
-      // Debounce validation to avoid excessive processing
+      // Add to pending validation indices for RAF batching
+      this._pendingValidationIndices.add(index);
+
+      // Clear old debounce timeout
       if (this._validationTimeout) {
         clearTimeout(this._validationTimeout);
-      }
-      this._validationTimeout = setTimeout(() => {
-        this.updateUiValidationState(index);
-        this.updateInternalsValidity();
         this._validationTimeout = null;
-      }, 150);
+      }
+
+      // Clear old RAF request
+      if (this._validationRafId !== null) {
+        cancelAnimationFrame(this._validationRafId);
+      }
+
+      // Schedule validation update using RAF for batching
+      this._validationRafId = requestAnimationFrame(() => {
+        this._validationRafId = null;
+
+        // Process all pending validations in one batch
+        for (const pendingIndex of this._pendingValidationIndices) {
+          this.updateUiValidationState(pendingIndex);
+        }
+        this._pendingValidationIndices.clear();
+        this.updateInternalsValidity();
+      });
     }
   };
 
