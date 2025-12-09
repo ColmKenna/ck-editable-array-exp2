@@ -43,11 +43,13 @@ The `CkEditableArray` is a well-structured, feature-rich Web Component for manag
 | High | Code Quality / Maintainability | `render()` method (Lines 1510-1715) | 200+ lines method handling modal, rows, templates - violates SRP |
 | High | Security / Input Validation | `bindElementData()` method (Lines 942-1000) | Missing sanitization for dynamic `id`, `name`, `aria-label` attributes |
 | High | Performance / Memory Management | Modal creation (Lines 1649-1660) | Event listeners attached every render - risk of memory leaks |
+| Status |  |  | ✅ Fixed (focus / modal keyboard handling added) |
 | High | Error Handling / Robustness | Modal rendering (Lines 1668-1715) | Silent failure if edit template missing in modal mode |
 | Medium | Performance / Resource Limits | `data` setter and `render()` | No maximum row limit - could render 1000s of rows |
 | Medium | Error Handling / Input Validation | `moveTo()` method (Lines 321-349) | Silent no-op for invalid indices - confusing for API consumers |
 | Medium | Robustness / Edge Cases | `deepClone()` method (Lines 288-314) | Could fail/hang with circular refs in unsupported types |
 | Medium | API Design / Feature Completeness | `validationSchema` property (Lines 95-107) | Limited validation - missing email, URL, number ranges, async |
+| Status |  |  | ✅ Partially addressed (custom validator error handling added) |
 | Low | Developer Experience / Maintainability | Throughout component | Missing JSDoc comments on public API methods |
 | Low | Performance / Optimization | `handleWrapperInput` (Lines 1319-1335) | No throttling on rapid input changes |
 | Low | API Documentation | Style definitions and render logic | CSS classes not documented for customization |
@@ -364,11 +366,15 @@ el.setAttribute('aria-label', this.sanitizeAttributeValue(label));
 
 ## Implementation Status
 
-- [ ] **Phase 1**: Critical Security & Maintainability Fixes
+- [ ] **Phase 1**: Critical Security & Maintainability Fixes (work in progress)
   - [ ] 1.1: Extract render() method
   - [ ] 1.2: Add attribute sanitization
   - [ ] 1.3: Fix modal event listener duplication
   - [ ] 1.4: Add template error handling
+
+-- Completed (work already merged)
+  - [x] Modal focus trap (keyboard Tab / Shift+Tab / Escape) — implemented & tested
+  - [x] Custom validator error handling (try/catch + validationfailed event) — implemented & tested
 
 - [ ] **Phase 2**: Performance & Error Handling Improvements
   - [ ] 2.1: Add maximum row limits
