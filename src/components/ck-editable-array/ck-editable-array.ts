@@ -88,6 +88,11 @@ export class CkEditableArray extends HTMLElement {
     }
   > = {};
 
+  /**
+   * Gets or sets the factory function for creating new items.
+   * @example
+   * element.newItemFactory = () => ({ name: '', email: '' });
+   */
   get newItemFactory(): () => Record<string, unknown> {
     return this._newItemFactory;
   }
@@ -96,6 +101,17 @@ export class CkEditableArray extends HTMLElement {
     this._newItemFactory = factory;
   }
 
+  /**
+   * Gets or sets the validation schema for form validation.
+   * Supports required, minLength, maxLength, min, max, email, url, pattern, custom, and async validators.
+   * @example
+   * element.validationSchema = {
+   *   email: { email: true, required: true },
+   *   age: { min: 18, max: 120 },
+   *   website: { url: true },
+   *   custom: (value) => value !== 'forbidden'
+   * };
+   */
   get validationSchema(): Record<
     string,
     {
@@ -134,6 +150,15 @@ export class CkEditableArray extends HTMLElement {
     this._validationSchema = schema;
   }
 
+  /**
+   * Gets or sets internationalization messages for validation errors.
+   * @example
+   * element.i18n = {
+   *   required: 'Ce champ est obligatoire',
+   *   minLength: 'Longueur minimale {min}',
+   *   email: 'Adresse email invalide'
+   * };
+   */
   get i18n(): Record<string, string> {
     return this._i18n;
   }
@@ -161,15 +186,27 @@ export class CkEditableArray extends HTMLElement {
     this._maxRowsLimit = value;
   }
 
-  // FR-029: Error handling properties
+  /**
+   * Gets the error state of the component.
+   * @returns {boolean} True if an error occurred, false otherwise
+   */
   get hasError(): boolean {
     return this._hasError;
   }
 
+  /**
+   * Gets the last error that occurred in the component.
+   * @returns {Error | null} The last error object or null if no error
+   */
   get lastError(): Error | null {
     return this._lastError;
   }
 
+  /**
+   * Gets or sets debug mode for logging.
+   * @example
+   * element.debug = true; // Enable debug logging
+   */
   get debug(): boolean {
     return this._debug;
   }
@@ -178,7 +215,11 @@ export class CkEditableArray extends HTMLElement {
     this._debug = value;
   }
 
-  // FR-030: Error recovery
+  /**
+   * Clears the current error state.
+   * @example
+   * element.clearError();
+   */
   clearError(): void {
     this._hasError = false;
     this._lastError = null;
@@ -204,16 +245,27 @@ export class CkEditableArray extends HTMLElement {
     );
   }
 
-  // FR-010, FR-011: Undo/Redo properties
+  /**
+   * Gets whether undo is available.
+   * @returns {boolean} True if there is a previous state to undo to
+   */
   get canUndo(): boolean {
     return this._history.length > 0;
   }
 
+  /**
+   * Gets whether redo is available.
+   * @returns {boolean} True if there is a next state to redo to
+   */
   get canRedo(): boolean {
     return this._redoStack.length > 0;
   }
 
-  // FR-012: Max history size property
+  /**
+   * Gets or sets the maximum history size for undo/redo.
+   * @example
+   * element.maxHistorySize = 50; // Keep 50 undo steps
+   */
   get maxHistorySize(): number {
     return this._maxHistorySize;
   }
@@ -226,7 +278,11 @@ export class CkEditableArray extends HTMLElement {
     }
   }
 
-  // FR-010: Undo - restore previous state
+  /**
+   * Undoes the last change.
+   * @example
+   * element.undo();
+   */
   undo(): void {
     if (this._readonly || !this.canUndo) return;
 
@@ -258,7 +314,11 @@ export class CkEditableArray extends HTMLElement {
     this.render();
   }
 
-  // FR-011: Redo - restore next state
+  /**
+   * Redoes the last undo action.
+   * @example
+   * element.redo();
+   */
   redo(): void {
     if (this._readonly || !this.canRedo) return;
 
@@ -290,13 +350,22 @@ export class CkEditableArray extends HTMLElement {
     this.render();
   }
 
-  // FR-013: Clear history
+  /**
+   * Clears all undo and redo history.
+   * @example
+   * element.clearHistory();
+   */
   clearHistory(): void {
     this._history = [];
     this._redoStack = [];
   }
 
-  // FR-014: Move row up (swap with row above)
+  /**
+   * Moves a row up by one position (swaps with row above).
+   * @param {number} index - The index of the row to move
+   * @example
+   * element.moveUp(2); // Move row at index 2 to index 1
+   */
   moveUp(index: number): void {
     // Block if readonly or editing
     if (this._readonly || this.getEditingRowIndex() !== -1) return;
@@ -331,7 +400,12 @@ export class CkEditableArray extends HTMLElement {
     this.render();
   }
 
-  // FR-015: Move row down (swap with row below)
+  /**
+   * Moves a row down by one position (swaps with row below).
+   * @param {number} index - The index of the row to move
+   * @example
+   * element.moveDown(1); // Move row at index 1 to index 2
+   */
   moveDown(index: number): void {
     // Block if readonly or editing
     if (this._readonly || this.getEditingRowIndex() !== -1) return;
@@ -690,6 +764,9 @@ export class CkEditableArray extends HTMLElement {
     }
   }
 
+  /**
+   * Gets or sets the component name attribute.
+   */
   get name() {
     return this.getAttribute('name') || 'World';
   }
@@ -698,6 +775,9 @@ export class CkEditableArray extends HTMLElement {
     this.setAttribute('name', value);
   }
 
+  /**
+   * Gets or sets the color attribute for styling.
+   */
   get color() {
     return this.getAttribute('color') || '#333';
   }
@@ -706,7 +786,14 @@ export class CkEditableArray extends HTMLElement {
     this.setAttribute('color', value);
   }
 
-  // Data property: deep clone on set, returns a clone on get to maintain immutability
+  /**
+   * Gets or sets the data array. Returns a deep clone to maintain immutability.
+   * Dispatches datachanged event and automatically manages undo/redo history.
+   * If maxRowsLimit is set and exceeded, data will be truncated with rowlimitexceeded event.
+   * @example
+   * element.data = [{ name: 'John', email: 'john@example.com' }];
+   * const rows = element.data; // Returns a clone, not the original
+   */
   get data(): Record<string, unknown>[] {
     return this.deepClone(this._data);
   }
@@ -827,18 +914,33 @@ export class CkEditableArray extends HTMLElement {
     return this._editingRowIndex;
   }
 
+  /**
+   * Gets the indices of all selected rows.
+   * @returns {number[]} Array of selected row indices
+   * @example
+   * const selected = element.selectedIndices; // [0, 2, 5]
+   */
   get selectedIndices(): number[] {
     return [...this._selectedIndices];
   }
 
-  // FR-017: Selection methods
-
-  // Check if a row is selected
+  /**
+   * Checks if a row is selected.
+   * @param {number} index - The row index to check
+   * @returns {boolean} True if the row is selected
+   * @example
+   * if (element.isSelected(2)) { ... }
+   */
   isSelected(index: number): boolean {
     return this._selectedIndices.includes(index);
   }
 
-  // Select a row
+  /**
+   * Selects a row.
+   * @param {number} index - The row index to select
+   * @example
+   * element.select(2);
+   */
   select(index: number): void {
     if (index < 0 || index >= this._data.length) return;
     if (this.isSelected(index)) return;
@@ -851,7 +953,12 @@ export class CkEditableArray extends HTMLElement {
     this.updateRowSelectionState(index);
   }
 
-  // Deselect a row
+  /**
+   * Deselects a row.
+   * @param {number} index - The row index to deselect
+   * @example
+   * element.deselect(2);
+   */
   deselect(index: number): void {
     const pos = this._selectedIndices.indexOf(index);
     if (pos === -1) return;
@@ -861,7 +968,12 @@ export class CkEditableArray extends HTMLElement {
     this.updateRowSelectionState(index);
   }
 
-  // Toggle selection
+  /**
+   * Toggles the selection state of a row.
+   * @param {number} index - The row index to toggle
+   * @example
+   * element.toggleSelection(2);
+   */
   toggleSelection(index: number): void {
     if (this.isSelected(index)) {
       this.deselect(index);
@@ -870,14 +982,22 @@ export class CkEditableArray extends HTMLElement {
     }
   }
 
-  // Select all rows
+  /**
+   * Selects all rows.
+   * @example
+   * element.selectAll();
+   */
   selectAll(): void {
     this._selectedIndices = this._data.map((_, i) => i);
     this.dispatchSelectionChanged();
     this.render();
   }
 
-  // Clear selection
+  /**
+   * Clears the selection (deselects all rows).
+   * @example
+   * element.clearSelection();
+   */
   clearSelection(): void {
     if (this._selectedIndices.length === 0) return;
     this._selectedIndices = [];
@@ -885,12 +1005,21 @@ export class CkEditableArray extends HTMLElement {
     this.render();
   }
 
-  // Alias for clearSelection
+  /**
+   * Alias for clearSelection().
+   * @example
+   * element.deselectAll();
+   */
   deselectAll(): void {
     this.clearSelection();
   }
 
-  // Delete selected rows (soft delete)
+  /**
+   * Deletes all selected rows (soft delete).
+   * Dispatches datachanged event after deletion.
+   * @example
+   * element.deleteSelected();
+   */
   deleteSelected(): void {
     if (this._readonly) return;
 
@@ -921,12 +1050,22 @@ export class CkEditableArray extends HTMLElement {
     this.clearSelection();
   }
 
-  // Mark selected as deleted (explicit method from tests)
+  /**
+   * Marks selected rows as deleted.
+   * Alias for deleteSelected().
+   * @example
+   * element.markSelectedDeleted();
+   */
   markSelectedDeleted(): void {
     this.deleteSelected();
   }
 
-  // Bulk update selected rows
+  /**
+   * Bulk updates all selected rows with the provided values.
+   * @param {Partial<Record<string, unknown>>} updates - Object with properties to update
+   * @example
+   * element.bulkUpdate({ status: 'active', reviewed: true });
+   */
   bulkUpdate(updates: Partial<Record<string, unknown>>): void {
     if (this._readonly) return;
 
@@ -950,7 +1089,13 @@ export class CkEditableArray extends HTMLElement {
     }
   }
 
-  // Get data of selected rows
+  /**
+   * Gets the data for all selected rows.
+   * Returns a deep clone to maintain immutability.
+   * @returns {Record<string, unknown>[]} Array of selected row data
+   * @example
+   * const selected = element.getSelectedData();
+   */
   getSelectedData(): Record<string, unknown>[] {
     return this._selectedIndices.map(i => this.deepClone(this._data[i]));
   }
@@ -1078,6 +1223,13 @@ export class CkEditableArray extends HTMLElement {
   }
 
   // FR-002: Add a new row
+  /**
+   * Adds a new row to the table using the newItemFactory.
+   * The new row is automatically put into edit mode.
+   * Dispatches datachanged event.
+   * @example
+   * element.addRow(); // Creates new row based on newItemFactory
+   */
   addRow(): void {
     // Block if readonly
     if (this._readonly) return;
@@ -1113,7 +1265,12 @@ export class CkEditableArray extends HTMLElement {
     this.focusFirstInput(newIndex);
   }
 
-  // FR-006: Soft delete a row
+  /**
+   * Soft deletes a row (marks it with deleted flag).
+   * @param {number} index - The row index to delete
+   * @example
+   * element.deleteRow(2);
+   */
   deleteRow(index: number): void {
     // Block if readonly
     if (this._readonly) return;
