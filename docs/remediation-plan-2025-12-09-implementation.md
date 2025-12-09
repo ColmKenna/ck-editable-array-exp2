@@ -74,12 +74,12 @@ The code review identified **4 High**, **4 Medium**, and **3 Low** priority issu
 
 #### Tasks
 
-| Task # | Issue Reference | Task Description | Acceptance Criteria | Existing Tests | New Tests Required |
-|--------|-----------------|------------------|---------------------|----------------|-------------------|
-| 1.1 | High-Code Quality-render() | Extract render() into smaller methods: renderWrapper(), renderRows(), renderModal() | render() under 50 lines, each method has single responsibility, JSDoc comments | All 162 tests pass | **Regression:** Test render still works after refactoring. **Validation:** Test each extracted method individually |
-| 1.2 | High-Security-bindElementData | Add sanitizeAttributeValue() method and apply to id, name, aria-label generation | Attributes are validated before assignment, no special chars in output | `data-binding.test.ts`: attribute tests | **Regression:** Test existing attribute generation unchanged. **Validation:** Test sanitization removes quotes/backslashes, limits length |
-| 1.3 | High-Performance-modal creation | Add _modalInitialized flag and setupModal() method to prevent duplicate listeners | Modal setup happens only once, no event listener duplication | `modal-edit.test.ts`: modal tests | **Regression:** Test modal still opens/closes. **Validation:** Test multiple renders don't add duplicate listeners |
-| 1.4 | High-Error Handling-modal template | Add templateerror event dispatch when modal mode enabled without edit template | Warning dispatched when template missing, debug logging in debug mode | None identified | **Validation:** Test templateerror event fired with correct message |
+| Task # | Issue Reference | Status | Task Description | Acceptance Criteria | Existing Tests | New Tests Required |
+|--------|-----------------|--------|------------------|---------------------|----------------|-------------------|
+| 1.1 | High-Code Quality-render() | [ ] | Extract render() into smaller methods: renderWrapper(), renderRows(), renderModal() | render() under 50 lines, each method has single responsibility, JSDoc comments | All 162 tests pass | **Regression:** Test render still works after refactoring. **Validation:** Test each extracted method individually |
+| 1.2 | High-Security-bindElementData | [ ] | Add sanitizeAttributeValue() method and apply to id, name, aria-label generation | Attributes are validated before assignment, no special chars in output | `data-binding.test.ts`: attribute tests | **Regression:** Test existing attribute generation unchanged. **Validation:** Test sanitization removes quotes/backslashes, limits length |
+| 1.3 | High-Performance-modal creation | [x] | Add _modalInitialized flag and setupModal() method to prevent duplicate listeners | Modal setup happens only once, no event listener duplication | `modal-edit.test.ts`: modal tests | **Regression:** Test modal still opens/closes. **Validation:** Test multiple renders don't add duplicate listeners |
+| 1.4 | High-Error Handling-modal template | [ ] | Add templateerror event dispatch when modal mode enabled without edit template | Warning dispatched when template missing, debug logging in debug mode | None identified | **Validation:** Test templateerror event fired with correct message |
 
 ### Phase 2: Performance & Error Handling Improvements
 
@@ -93,11 +93,13 @@ The code review identified **4 High**, **4 Medium**, and **3 Low** priority issu
 
 #### Tasks
 
-| Task # | Issue Reference | Task Description | Acceptance Criteria | Existing Tests | New Tests Required |
-|--------|-----------------|------------------|---------------------|----------------|-------------------|
-| 2.1 | Medium-Performance-max rows | Add maxRowsLimit property with warning events when exceeded | Row count warnings dispatched, optional truncation | `performance.test.ts`: large dataset tests | **Regression:** Test normal datasets unchanged. **Validation:** Test rowlimitexceeded event fired, truncation works |
-| 2.2 | Medium-Error Handling-moveTo | Add error event dispatch for invalid moveTo indices | Invalid indices trigger error events instead of silent no-op | `reordering.test.ts`: move tests | **Regression:** Test valid moves still work. **Validation:** Test error event dispatched for out-of-bounds indices |
-| 2.3 | Medium-Robustness-deepClone | Add depth/property limits to deepClone, remove dangerous JSON fallback | Clone fails gracefully with limits, no infinite loops | `core-data.test.ts`: clone tests | **Regression:** Test normal objects still clone. **Validation:** Test circular refs throw with depth limit, fallback to shallow copy |
+#### Tasks
+
+| Task # | Issue Reference | Status | Task Description | Acceptance Criteria | Existing Tests | New Tests Required |
+|--------|-----------------|--------|------------------|---------------------|----------------|-------------------|
+| 2.1 | Medium-Performance-max rows | [ ] | Add maxRowsLimit property with warning events when exceeded | Row count warnings dispatched, optional truncation | `performance.test.ts`: large dataset tests | **Regression:** Test normal datasets unchanged. **Validation:** Test rowlimitexceeded event fired, truncation works |
+| 2.2 | Medium-Error Handling-moveTo | [ ] | Add error event dispatch for invalid moveTo indices | Invalid indices trigger error events instead of silent no-op | `reordering.test.ts`: move tests | **Regression:** Test valid moves still work. **Validation:** Test error event dispatched for out-of-bounds indices |
+| 2.3 | Medium-Robustness-deepClone | [ ] | Add depth/property limits to deepClone, remove dangerous JSON fallback | Clone fails gracefully with limits, no infinite loops | `core-data.test.ts`: clone tests | **Regression:** Test normal objects still clone. **Validation:** Test circular refs throw with depth limit, fallback to shallow copy |
 
 ### Phase 3: API Enhancement & Documentation
 
@@ -111,11 +113,13 @@ The code review identified **4 High**, **4 Medium**, and **3 Low** priority issu
 
 #### Tasks
 
-| Task # | Issue Reference | Task Description | Acceptance Criteria | Existing Tests | New Tests Required |
-|--------|-----------------|------------------|---------------------|----------------|-------------------|
-| 3.1 | Medium-API Design-validationSchema | Extend validation schema with email, url, min/max, async support | New validation types work, backward compatible | `validation.test.ts`: schema tests | **Regression:** Test existing validations unchanged. **Validation:** Test email pattern, number ranges, async validators |
-| 3.2 | Low-Maintainability-JSDoc | Add JSDoc comments to all public methods with examples | All public APIs documented, examples provided | None (documentation only) | None (documentation only) |
-| 3.3 | Low-Performance-input throttling | Implement RAF batching for input validation updates | Reduced validation calls during rapid typing | `edit-mode.test.ts`: input tests | **Regression:** Test validation still triggers. **Validation:** Test batching reduces excessive calls |
+#### Tasks
+
+| Task # | Issue Reference | Status | Task Description | Acceptance Criteria | Existing Tests | New Tests Required |
+|--------|-----------------|--------|------------------|---------------------|----------------|-------------------|
+| 3.1 | Medium-API Design-validationSchema | [ ] | Extend validation schema with email, url, min/max, async support | New validation types work, backward compatible | `validation.test.ts`: schema tests | **Regression:** Test existing validations unchanged. **Validation:** Test email pattern, number ranges, async validators |
+| 3.2 | Low-Maintainability-JSDoc | [ ] | Add JSDoc comments to all public methods with examples | All public APIs documented, examples provided | None (documentation only) | None (documentation only) |
+| 3.3 | Low-Performance-input throttling | [ ] | Implement RAF batching for input validation updates | Reduced validation calls during rapid typing | `edit-mode.test.ts`: input tests | **Regression:** Test validation still triggers. **Validation:** Test batching reduces excessive calls |
 
 ### Phase 4: Documentation & Polish
 
@@ -129,9 +133,11 @@ The code review identified **4 High**, **4 Medium**, and **3 Low** priority issu
 
 #### Tasks
 
-| Task # | Issue Reference | Task Description | Acceptance Criteria | Existing Tests | New Tests Required |
-|--------|-----------------|------------------|---------------------|----------------|-------------------|
-| 4.1 | Low-API Documentation-CSS classes | Document CSS class reference in readme.technical.md | All customizable classes documented with examples | None (documentation only) | None (documentation only) |
+#### Tasks
+
+| Task # | Issue Reference | Status | Task Description | Acceptance Criteria | Existing Tests | New Tests Required |
+|--------|-----------------|--------|------------------|---------------------|----------------|-------------------|
+| 4.1 | Low-API Documentation-CSS classes | [ ] | Document CSS class reference in readme.technical.md | All customizable classes documented with examples | None (documentation only) | None (documentation only) |
 
 ---
 
@@ -364,10 +370,10 @@ el.setAttribute('aria-label', this.sanitizeAttributeValue(label));
 
 ## Implementation Status
 
-- [ ] **Phase 1**: Critical Security & Maintainability Fixes (work in progress)
+- [-] **Phase 1**: Critical Security & Maintainability Fixes (work in progress)
   - [ ] 1.1: Extract render() method
   - [ ] 1.2: Add attribute sanitization
-  - [ ] 1.3: Fix modal event listener duplication
+  - [x] 1.3: Fix modal event listener duplication
   - [ ] 1.4: Add template error handling
 
 -- Completed (work already merged)

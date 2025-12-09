@@ -1739,92 +1739,139 @@ export class CkEditableArray extends HTMLElement {
     }
   }
 
+  /**
+   * Renders the wrapper element with proper styling and returns it.
+   * Handles color customization via CSS custom properties.
+   * @returns The wrapper element ready for content
+   */
+  private renderWrapper(): HTMLElement {
+    // Ensure fallback styles are applied
+    this.ensureFallbackStyles();
+
+    // Get or create wrapper element
+    const wrapper = this.ensureWrapper();
+
+    // Apply per-instance color via CSS custom property
+    const sanitizedColor = this.getSanitizedColor(this.color);
+    this.style.setProperty('--ck-editable-array-color', sanitizedColor);
+
+    // Clear wrapper content but leave other nodes (like style) intact
+    wrapper.innerHTML = '';
+
+    return wrapper;
+  }
+
+  /**
+   * Renders all data rows into the provided wrapper element.
+   * Handles default message display if no templates are available.
+   * @param wrapper - The wrapper element to render rows into
+   */
+  private renderRows(wrapper: HTMLElement): void {
+    // Cache templates on first render
+    this.initTemplates();
+
+    // If no templates, render default message
+    if (!this._displayTemplate) {
+      const sanitizedColor = this.getSanitizedColor(this.color);
+      const heading = document.createElement('h1');
+      heading.className = 'ck-editable-array__message';
+      heading.textContent = `Hello, ${this.name}!`;
+      heading.style.color = sanitizedColor;
+
+      const subtitle = document.createElement('p');
+      subtitle.className = 'ck-editable-array__subtitle';
+      subtitle.textContent = 'Welcome to our Web Component Library';
+
+      wrapper.appendChild(heading);
+      wrapper.appendChild(subtitle);
+      return;
+    }
+
+    // Render rows from data
+    const componentName = this.getAttribute('name') || 'items';
+    this._data.forEach((rowData, index) => {
+      const rowEl = this.renderRow(rowData, index, componentName);
+      wrapper.appendChild(rowEl);
+    });
+  }
+
+  /**
+   * Creates and returns the modal element for modal editing mode.
+   * Caches the modal reference to avoid recreation on subsequent renders.
+   * @returns The modal element or null if not in modal mode
+   */
+  private setupModalElement(): HTMLElement | null {
+    if (!this._modalEdit) {
+      return null;
+    }
+
+    // Use cached reference or query if not yet cached
+    if (!this._modalElement) {
+      this._modalElement = this.shadow.querySelector(
+        '.ck-modal'
+      ) as HTMLElement | null;
+    }
+
+    let modal = this._modalElement;
+
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.className = 'ck-modal ck-hidden';
+      modal.setAttribute('role', 'dialog');
+      modal.setAttribute('aria-modal', 'true');
+      modal.setAttribute('aria-hidden', 'true');
+
+      // Create modal content wrapper
+      const modalContent = document.createElement('div');
+      modalContent.className = 'ck-modal__content';
+      modal.appendChild(modalContent);
+
+      // Add event listeners only when creating modal (not on every render)
+      modal.addEventListener('click', this.handleModalClick);
+      modal.addEventListener('click', this.handleWrapperClick);
+      modal.addEventListener('input', this.handleWrapperInput);
+      modal.addEventListener('keydown', this.handleModalKeydown);
+
+      this.shadow.appendChild(modal);
+
+      // Cache the modal reference
+      this._modalElement = modal;
+    }
+
+    return modal;
+  }
+
+  /**
+   * Renders modal content if in modal editing mode.
+   * @param modal - The modal element to render content into
+   */
+  private renderModalIfNeeded(modal: HTMLElement | null): void {
+    if (this._modalEdit && modal) {
+      const editingIndex = this.getEditingRowIndex();
+      this.renderModal(modal, editingIndex);
+    }
+  }
+
+  /**
+   * Main render method orchestrating the component's UI rendering.
+   * Handles wrapper, rows, and modal rendering in sequence.
+   */
   private render() {
     try {
       // Guard: don't render if not connected to DOM
       if (!this.isConnected) return;
 
-      // Ensure fallback styles are applied
-      this.ensureFallbackStyles();
+      // Render wrapper and get reference
+      const wrapper = this.renderWrapper();
 
-      // Get or create wrapper element
-      const wrapper = this.ensureWrapper();
+      // Setup modal if in modal mode
+      const modal = this.setupModalElement();
 
-      // Apply per-instance color via CSS custom property
-      const sanitizedColor = this.getSanitizedColor(this.color);
-      this.style.setProperty('--ck-editable-array-color', sanitizedColor);
+      // Render all rows into wrapper
+      this.renderRows(wrapper);
 
-      // Clear wrapper content but leave other nodes (like style) intact
-      wrapper.innerHTML = '';
-
-      // Create or get modal element if in modal mode
-      let modal: HTMLElement | null = null;
-      if (this._modalEdit) {
-        // Use cached reference or query if not yet cached
-        if (!this._modalElement) {
-          this._modalElement = this.shadow.querySelector(
-            '.ck-modal'
-          ) as HTMLElement | null;
-        }
-
-        modal = this._modalElement;
-
-        if (!modal) {
-          modal = document.createElement('div');
-          modal.className = 'ck-modal ck-hidden';
-          modal.setAttribute('role', 'dialog');
-          modal.setAttribute('aria-modal', 'true');
-          modal.setAttribute('aria-hidden', 'true');
-
-          // Create modal content wrapper
-          const modalContent = document.createElement('div');
-          modalContent.className = 'ck-modal__content';
-          modal.appendChild(modalContent);
-
-          // Add event listeners only when creating modal (not on every render)
-          modal.addEventListener('click', this.handleModalClick);
-          modal.addEventListener('click', this.handleWrapperClick);
-          modal.addEventListener('input', this.handleWrapperInput);
-          modal.addEventListener('keydown', this.handleModalKeydown);
-
-          this.shadow.appendChild(modal);
-
-          // Cache the modal reference
-          this._modalElement = modal;
-        }
-      }
-
-      // Cache templates on first render
-      this.initTemplates();
-
-      // If no templates, render default message
-      if (!this._displayTemplate) {
-        const heading = document.createElement('h1');
-        heading.className = 'ck-editable-array__message';
-        heading.textContent = `Hello, ${this.name}!`;
-        heading.style.color = sanitizedColor;
-
-        const subtitle = document.createElement('p');
-        subtitle.className = 'ck-editable-array__subtitle';
-        subtitle.textContent = 'Welcome to our Web Component Library';
-
-        wrapper.appendChild(heading);
-        wrapper.appendChild(subtitle);
-        return;
-      }
-
-      // Render rows from data
-      const componentName = this.getAttribute('name') || 'items';
-      this._data.forEach((rowData, index) => {
-        const rowEl = this.renderRow(rowData, index, componentName);
-        wrapper.appendChild(rowEl);
-      });
-
-      // Handle modal rendering if in modal edit mode
-      if (this._modalEdit && modal) {
-        const editingIndex = this.getEditingRowIndex();
-        this.renderModal(modal, editingIndex);
-      }
+      // Render modal content if needed
+      this.renderModalIfNeeded(modal);
     } catch (error) {
       // FR-029: Handle rendering errors
       this.handleRenderError(
