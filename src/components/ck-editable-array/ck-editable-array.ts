@@ -42,6 +42,10 @@ export class CkEditableArray extends HTMLElement {
   private _colorCache: Map<string, string> = new Map();
   // Debounce timeout for validation
   private _validationTimeout: ReturnType<typeof setTimeout> | null = null;
+  // Modal focus trap handler
+  private handleModalKeydown = (e: KeyboardEvent): void => {
+    this.handleModalFocusTrap(e);
+  };
 
   // Undo/Redo history (FR-010, FR-011, FR-012, FR-013)
   private _history: Record<string, unknown>[][] = [];
@@ -1516,6 +1520,54 @@ export class CkEditableArray extends HTMLElement {
     }
   };
 
+  // Handle modal focus trap (WCAG 2.1 Level AA requirement)
+  // Prevents focus from escaping the modal and supports Escape key
+  private handleModalFocusTrap(e: KeyboardEvent): void {
+    if (!this._modalEdit || !this._modalElement) return;
+
+    // Handle Escape key to close modal
+    if (e.key === 'Escape') {
+      const editingIndex = this.getEditingRowIndex();
+      if (editingIndex !== -1) {
+        e.preventDefault();
+        this.cancelEdit(editingIndex);
+      }
+      return;
+    }
+
+    // Handle Tab key for focus trap
+    if (e.key !== 'Tab') return;
+
+    // Get all focusable elements within the modal
+    const focusableElements = Array.from(
+      this._modalElement.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      )
+    ).filter(el => {
+      const element = el as HTMLElement;
+      return element.offsetParent !== null; // Visible elements only
+    }) as HTMLElement[];
+
+    if (focusableElements.length === 0) return;
+
+    const activeElement = this.shadowRoot?.activeElement as HTMLElement;
+    const currentIndex = focusableElements.indexOf(activeElement);
+
+    if (e.shiftKey) {
+      // Shift+Tab: move focus backward
+      if (currentIndex <= 0) {
+        e.preventDefault();
+        focusableElements[focusableElements.length - 1].focus();
+      }
+    } else {
+      // Tab: move focus forward
+      if (currentIndex >= focusableElements.length - 1) {
+        e.preventDefault();
+        focusableElements[0].focus();
+      }
+    }
+  }
+
   // Helper: Ensure fallback styles are applied
   private ensureFallbackStyles(): void {
     if (
@@ -1707,6 +1759,7 @@ export class CkEditableArray extends HTMLElement {
           modal.addEventListener('click', this.handleModalClick);
           modal.addEventListener('click', this.handleWrapperClick);
           modal.addEventListener('input', this.handleWrapperInput);
+          modal.addEventListener('keydown', this.handleModalKeydown);
 
           this.shadow.appendChild(modal);
 
