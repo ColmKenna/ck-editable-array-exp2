@@ -188,4 +188,148 @@ describe('ck-editable-array - Performance (Phase 12)', () => {
       expect(lastRow!.textContent).toBe('User 99');
     });
   });
+
+  describe('NFR-P-004: Maximum Row Limits', () => {
+    test('TC-P-004-01: Should dispatch rowlimitexceeded event when limit exceeded', async () => {
+      setupElement();
+
+      // Set a row limit
+      (element as unknown as { maxRowsLimit: number }).maxRowsLimit = 10;
+
+      // Create promise to wait for event
+      const eventPromise = new Promise<CustomEvent>((resolve) => {
+        element.addEventListener('rowlimitexceeded', (event: Event) => {
+          resolve(event as CustomEvent);
+        }, { once: true });
+      });
+
+      // Set data exceeding the limit
+      const largeDataset = Array.from({ length: 20 }, (_, i) => ({
+        name: `User ${i}`,
+        email: `user${i}@test.com`,
+      }));
+
+      element.data = largeDataset;
+
+      // Wait for the event
+      const customEvent = await eventPromise;
+
+      expect(customEvent.detail).toBeDefined();
+      expect(customEvent.detail.limit).toBe(10);
+      expect(customEvent.detail.attempted).toBe(20);
+      expect(customEvent.detail.message).toContain('Row limit of 10 exceeded');
+      expect(customEvent.detail.timestamp).toBeGreaterThan(0);
+    });
+
+    test('TC-P-004-02: Should truncate data when limit exceeded', () => {
+      setupElement();
+
+      // Set a row limit
+      (element as unknown as { maxRowsLimit: number }).maxRowsLimit = 5;
+
+      // Set data exceeding the limit
+      const largeDataset = Array.from({ length: 10 }, (_, i) => ({
+        name: `User ${i}`,
+        email: `user${i}@test.com`,
+      }));
+
+      element.data = largeDataset;
+
+      // Verify only 5 rows are rendered (truncated to limit)
+      const rows = element.shadowRoot!.querySelectorAll('[data-row-index]');
+      expect(rows.length).toBe(5);
+
+      // Verify first and last rendered rows
+      const firstRow = rows[0].querySelector('[data-bind="name"]');
+      const lastRow = rows[4].querySelector('[data-bind="name"]');
+      expect(firstRow!.textContent).toBe('User 0');
+      expect(lastRow!.textContent).toBe('User 4');
+    });
+
+    test('TC-P-004-03: Should allow data when under limit', () => {
+      setupElement();
+
+      // Set a row limit
+      (element as unknown as { maxRowsLimit: number }).maxRowsLimit = 10;
+
+      let eventFired = false;
+      element.addEventListener('rowlimitexceeded', () => {
+        eventFired = true;
+      });
+
+      // Set data under the limit
+      const smallDataset = Array.from({ length: 5 }, (_, i) => ({
+        name: `User ${i}`,
+        email: `user${i}@test.com`,
+      }));
+
+      element.data = smallDataset;
+
+      // Verify event was not fired
+      expect(eventFired).toBe(false);
+
+      // Verify all 5 rows are rendered
+      const rows = element.shadowRoot!.querySelectorAll('[data-row-index]');
+      expect(rows.length).toBe(5);
+    });
+
+    test('TC-P-004-04: Should not limit when maxRowsLimit is null', () => {
+      setupElement();
+
+      // Ensure no limit is set (null means unlimited)
+      (element as unknown as { maxRowsLimit: number | null }).maxRowsLimit = null;
+
+      let eventFired = false;
+      element.addEventListener('rowlimitexceeded', () => {
+        eventFired = true;
+      });
+
+      // Set large dataset
+      const largeDataset = Array.from({ length: 100 }, (_, i) => ({
+        name: `User ${i}`,
+        email: `user${i}@test.com`,
+      }));
+
+      element.data = largeDataset;
+
+      // Verify event was not fired
+      expect(eventFired).toBe(false);
+
+      // Verify all 100 rows are rendered (no truncation)
+      const rows = element.shadowRoot!.querySelectorAll('[data-row-index]');
+      expect(rows.length).toBe(100);
+    });
+
+    test('TC-P-004-05: Should log warning in debug mode when limit exceeded', async () => {
+      setupElement();
+
+      // Enable debug mode
+      (element as unknown as { debug: boolean }).debug = true;
+
+      // Set a row limit
+      (element as unknown as { maxRowsLimit: number }).maxRowsLimit = 5;
+
+      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+
+      // Set data exceeding the limit
+      const largeDataset = Array.from({ length: 10 }, (_, i) => ({
+        name: `User ${i}`,
+        email: `user${i}@test.com`,
+      }));
+
+      element.data = largeDataset;
+
+      // Give time for events to process
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining('[ck-editable-array]')
+      );
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Row limit of 5 exceeded')
+      );
+
+      consoleSpy.mockRestore();
+    });
+  });
 });

@@ -68,6 +68,9 @@ export class CkEditableArray extends HTMLElement {
   private _lastError: Error | null = null;
   private _debug = false;
 
+  // Performance: Maximum number of rows to render (optional limit)
+  private _maxRowsLimit: number | null = null;
+
   // Validation schema for form validation (FR-018)
   private _validationSchema: Record<
     string,
@@ -122,6 +125,25 @@ export class CkEditableArray extends HTMLElement {
 
   set i18n(value: Record<string, string>) {
     this._i18n = value;
+  }
+
+  /**
+   * Gets the maximum number of rows allowed. Null means unlimited.
+   */
+  get maxRowsLimit(): number | null {
+    return this._maxRowsLimit;
+  }
+
+  /**
+   * Sets the maximum number of rows allowed. Null means unlimited.
+   * When set, data exceeding this limit will trigger a rowlimitexceeded event.
+   */
+  set maxRowsLimit(value: number | null) {
+    if (value !== null && (typeof value !== 'number' || value < 1)) {
+      console.warn('[ck-editable-array] maxRowsLimit must be a positive number or null');
+      return;
+    }
+    this._maxRowsLimit = value;
   }
 
   // FR-029: Error handling properties
@@ -550,6 +572,34 @@ export class CkEditableArray extends HTMLElement {
         })
       );
       return;
+    }
+
+    // Check if row limit is exceeded
+    if (this._maxRowsLimit !== null && value.length > this._maxRowsLimit) {
+      // Dispatch warning event
+      this.dispatchEvent(
+        new CustomEvent('rowlimitexceeded', {
+          bubbles: true,
+          composed: true,
+          detail: {
+            limit: this._maxRowsLimit,
+            attempted: value.length,
+            message: `Row limit of ${this._maxRowsLimit} exceeded. Received ${value.length} rows.`,
+            timestamp: Date.now()
+          }
+        })
+      );
+      
+      // Log warning in debug mode
+      if (this._debug) {
+        console.warn(
+          `[ck-editable-array] Row limit of ${this._maxRowsLimit} exceeded. ` +
+          `Received ${value.length} rows. Data will be truncated.`
+        );
+      }
+      
+      // Truncate to limit
+      value = value.slice(0, this._maxRowsLimit);
     }
 
     // Push current state to history (FR-010, FR-012)
