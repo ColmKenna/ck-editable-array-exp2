@@ -10,7 +10,7 @@
 
 **Implementation Plan Status:** ✅ COMPLETE  
 **Generated:** December 9, 2025  
-**Next Step:** Review, merge, and publish remediation changes (update release notes and close tasks)
+**Next Step:** Review, merge, and publish remediation changes (update release notes, add CI to run Jest on push/PR, and close tasks)
   - [x] 1.1: Extract render() method
   - [x] 1.2: Add attribute sanitization
   - [x] 1.3: Fix modal event listener duplication
@@ -241,22 +241,22 @@ Before making any changes, document the current test state:
 
 | Test File | Test Count | Coverage Area | Status |
 |-----------|------------|---------------|--------|
-| ck-editable-array.test.ts | 12 | Core component lifecycle | Passing |
-| add-row.test.ts | 8 | Row addition functionality | Passing |
-| data-binding.test.ts | 15 | Data binding and templates | Passing |
-| edit-mode.test.ts | 18 | Inline editing features | Passing |
-| modal-edit.test.ts | 12 | Modal editing features | Passing |
-| validation.test.ts | 25 | Validation system | Passing |
-| selection.test.ts | 10 | Row selection features | Passing |
-| delete-restore.test.ts | 12 | Soft delete/restore | Passing |
-| reordering.test.ts | 8 | Row reordering | Passing |
-| undo-redo.test.ts | 10 | History management | Passing |
-| readonly.test.ts | 6 | Read-only mode | Passing |
-| accessibility.test.ts | 15 | Accessibility compliance | Passing |
+| ck-editable-array.test.ts | 8 | Core component lifecycle | Passing |
+| add-row.test.ts | 6 | Row addition functionality | Passing |
+| data-binding.test.ts | 13 | Data binding and templates | Passing |
+| edit-mode.test.ts | 22 | Inline editing features | Passing |
+| modal-edit.test.ts | 27 | Modal editing features | Passing |
+| validation.test.ts | 27 | Validation system | Passing |
+| selection.test.ts | 15 | Row selection features | Passing |
+| delete-restore.test.ts | 9 | Soft delete/restore | Passing |
+| reordering.test.ts | 18 | Row reordering | Passing |
+| undo-redo.test.ts | 14 | History management | Passing |
+| readonly.test.ts | 2 | Read-only mode | Passing |
+| accessibility.test.ts | 9 | Accessibility compliance | Passing |
 | performance.test.ts | 8 | Performance benchmarks | Passing |
-| error-handling.test.ts | 8 | Error handling | Passing |
-| form-integration.test.ts | 5 | Form integration | Passing |
-| core-data.test.ts | 4 | Data operations | Passing |
+| error-handling.test.ts | 6 | Error handling | Passing |
+| form-integration.test.ts | 13 | Form integration | Passing |
+| core-data.test.ts | 12 | Data operations | Passing |
 
 **Total Tests:** 209
 **Passing:** 209
@@ -275,10 +275,10 @@ For each phase, list tests that **must continue to pass**:
 | Phase 4 | None (documentation only) | None |
 
 **Pre-Implementation Checklist:**
-- [ ] Run full test suite and confirm all tests passing (209)
-- [ ] Document any currently failing or skipped tests (none expected)
-- [ ] Identify flaky tests that may cause false negatives (none identified)
-- [ ] Set up CI/CD to run tests on every commit
+- [x] Run full test suite and confirm all tests passing (209)
+- [x] Document any currently failing or skipped tests (none expected)
+- [x] Identify flaky tests that may cause false negatives (none identified)
+- [ ] Set up CI/CD to run tests on every commit (recommended next step)
 
 ### 5.3 New Tests Required
 
@@ -352,13 +352,13 @@ test('should handle deepClone depth limits gracefully', () => {
 
 ### Unit Testing
 
-- [ ] Run existing test suite — **all tests must pass before proceeding** (209)
+- [x] Run existing test suite — **all tests must pass before proceeding** (209)
 - [ ] Test each public method in isolation
 - [ ] Test attribute reflection and `observedAttributes`
 - [ ] Test lifecycle hooks (connect, disconnect, adopt)
 - [ ] Test error handling and edge cases
-- [ ] **Verify new regression tests fail against old code** (if possible)
-- [ ] **Verify new validation tests pass against fixed code**
+- [x] **Verify new regression tests fail against old code** (if possible)
+- [x] **Verify new validation tests pass against fixed code**
 
 ### Integration Testing
 

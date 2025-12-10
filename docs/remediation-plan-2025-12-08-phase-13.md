@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-The CkEditableArray component is well-engineered with strong test coverage (163 tests), excellent security practices, and good accessibility compliance. The Phase 13 implementation (FR-029: Modal Hidden Row Edits) successfully adds support for rendering all rows in modal mode.
+The CkEditableArray component is well-engineered with strong test coverage (209 tests), excellent security practices, and good accessibility compliance. The Phase 13 implementation (FR-029: Modal Hidden Row Edits) successfully adds support for rendering all rows in modal mode.
 
 **Critical Finding:** The `render()` method has grown to 200+ lines and needs refactoring into smaller, testable functions. This is the highest priority to prevent future maintenance issues.
 
@@ -42,12 +42,12 @@ The CkEditableArray component is well-engineered with strong test coverage (163 
 **Acceptance Criteria:**
 - [x] Main `render()` method reduced to <50 lines
 - [x] Each extracted method has single, clear responsibility
-- [x] All 163 tests still pass (zero regressions)
+  - [x] All 209 tests still pass (zero regressions)
 - [x] No performance regression (render time ≤ 5% slower)
 - [x] Each method has JSDoc documentation
 - [x] New private methods have unit tests
 
-**Existing Tests:** All 163 tests must pass  
+**Existing Tests:** All 209 tests must pass  
 **New Tests Required:** 3-5 unit tests for new private methods (`renderWrapper`, `renderRows`, `renderModal`)
 
 **Implementation Approach:**
@@ -66,76 +66,22 @@ The CkEditableArray component is well-engineered with strong test coverage (163 
 | 1.1a | HIGH-01 | Extract `renderWrapper()` | Lines reduced by 30 | +1 test |
 | 1.1b | HIGH-01 | Extract `renderRows()` | Lines reduced by 60 | +1 test |
 | 1.1c | HIGH-01 | Extract `renderModal()` & `setupModal()` | Lines reduced by 50 | +1 test |
-| 1.1d | HIGH-01 | Run full test suite and verify perf | All 163 pass | No new tests |
-| 1.1e | HIGH-01 | Add JSDoc to all extracted methods | Complete documentation | No new tests |
+| 1.1d | HIGH-01 | Run full test suite and verify perf | All 209 pass | No new tests |
 
 **Code Preview - Before:**
 
 ```typescript
-private render() {
-  try {
-    if (!this.isConnected) return;
 
     // Ensure fallback style exists...
-    if (!ckEditableArraySheet && ...) { /* 20 lines */ }
-
-    // Keep or create wrapper...
-    let wrapper = this.shadow.querySelector(...);
-    if (!wrapper) { /* 15 lines */ }
-
     // Apply color and clear content...
-    wrapper.innerHTML = '';
-
-    // Create modal element...
-    let modal: HTMLElement | null = null;
     if (this._modalEdit) { /* 30 lines */ }
-
-    // Cache templates...
-    this.initTemplates();
-
     // Render rows...
-    this._data.forEach((rowData, index) => { /* 80 lines */ });
-
-    // Handle modal rendering...
-    if (this._modalEdit && modal) { /* 50 lines */ }
   } catch (error) { /* 5 lines */ }
-}
-```
 
-**Code Preview - After:**
 
-```typescript
-private render() {
-  try {
-    if (!this.isConnected) return;
-
-    this.ensureStylesheet();
-    this.renderWrapper();
-    this.initTemplates();
-    this.renderRows();
     
-    if (this._modalEdit) {
-      this.setupModal();
-      this.renderModalContent();
-    }
   } catch (error) {
-    this.handleRenderError(
-      error instanceof Error ? error : new Error(String(error)),
-      'render'
-    );
   }
-}
-
-private ensureStylesheet(): void {
-  // 10 lines: style setup
-}
-
-private renderWrapper(): void {
-  // 15 lines: wrapper creation/reuse
-}
-
-private renderRows(): void {
-  // 80 lines: row rendering loop
 }
 
 private setupModal(): void {
@@ -166,11 +112,11 @@ private renderModalContent(): void {
 **Acceptance Criteria:**
 - [x] New `sanitizeAttributeValue()` method implemented
 - [x] All attribute assignments use sanitization
-- [x] All 163 tests still pass
+  - [x] All 209 tests still pass
 - [x] Edge cases handled (quotes, backslashes, special chars, long values)
 - [x] Documentation updated
 
-**Existing Tests:** All 163 tests must pass  
+**Existing Tests:** All 209 tests must pass  
 **New Tests Required:** 4 tests for sanitization (special chars, quotes, length limits, edge cases)
 
 **Task Breakdown:**
@@ -232,40 +178,31 @@ private sanitizeAttributeValue(value: string): string {
 - [x] Explicit `_modalInitialized` flag added
 - [x] Modal setup extracted to `setupModal()` method
 - [x] Event listeners attached exactly once
-- [x] All 163 tests still pass
+  - [x] All 209 tests still pass
 - [x] No change to modal behavior
 
-**Existing Tests:** All 163 tests must pass  
+**Existing Tests:** All 209 tests must pass  
 **New Tests Required:** 1 test ensuring listeners not duplicated on re-render
 
 **Task Breakdown:**
-
 | Task | Issue Ref | Description | Acceptance | Tests |
 |------|-----------|-------------|------------|-------|
 | 1.3a | HIGH-03 | Add _modalInitialized flag | Flag property added | No test |
 | 1.3b | HIGH-03 | Extract setupModal() method | Method complete | No test |
 | 1.3c | HIGH-03 | Update render() to call setupModal() | Integrated into render | +1 test |
 | 1.3d | HIGH-03 | Verify no event listener duplication | Event listeners attached once | No test (covered by 1.3c) |
-
----
-
 ### Phase 1.4: Add Error Handling for Missing Edit Template (HIGH PRIORITY)
 
-**Issue Reference:** ErrorHandling-04 (missing template fallback)
-
-**Current Problem:**
-- If modal-edit enabled but no edit template provided, modal silently fails
-- User gets no feedback about what's wrong
 - Confusing developer experience
 
 **Acceptance Criteria:**
 - [x] `templateerror` event dispatched when edit template missing in modal mode
 - [x] Warning logged in debug mode
 - [x] Graceful degradation (modal mode disabled if template missing)
-- [x] All 163 tests still pass
+  - [x] All 209 tests still pass
 - [x] New test for missing template scenario
 
-**Existing Tests:** All 163 tests must pass  
+**Existing Tests:** All 209 tests must pass  
 **New Tests Required:** 1 test for missing template warning
 
 **Task Breakdown:**
@@ -299,28 +236,15 @@ private sanitizeAttributeValue(value: string): string {
 - [x] `maxRowsLimit` property added (default 1000)
 - [x] Warning event dispatched if limit exceeded
 - [x] Debug warning logged
-- [x] Rows truncated to limit (optional)
-- [x] All tests pass
-- [x] Performance test with 1000+ rows
-
-**Existing Tests:** All 163 tests must pass  
-**New Tests Required:** 2 tests (limit exceeded event, truncation behavior)
+**Existing Tests:** All 209 tests must pass  
 
 **Task Breakdown:**
 
 | Task | Issue Ref | Description | Acceptance | Tests |
 |------|-----------|-------------|------------|-------|
 | 2.1a | MEDIUM-05 | Add _maxRowsLimit property | Property with getter/setter | No test |
-| 2.1b | MEDIUM-05 | Check limit in data setter | Limit enforced | +1 test |
-| 2.1c | MEDIUM-05 | Dispatch rowlimitexceeded event | Event dispatched | +1 test |
-| 2.1d | MEDIUM-05 | Log warning in debug mode | Warning shown | Manual verification |
 | 2.1e | MEDIUM-05 | Performance test (1000+ rows) | Render time < 5 seconds | No new test (perf measurement) |
 
----
-
-### Phase 2.2: Add Validation Error Events (MEDIUM PRIORITY)
-
-**Issue Reference:** ErrorHandling-06 (boundary validation)
 
 **Current Problem:**
 - `moveTo()` silently ignores invalid indices
@@ -334,23 +258,14 @@ private sanitizeAttributeValue(value: string): string {
 - [x] All tests pass
 - [x] 3 new tests for error scenarios
 
-**Existing Tests:** All 163 tests must pass  
 **New Tests Required:** 3 tests (invalid moveTo index, invalid select index, invalid delete index)
 
 **Task Breakdown:**
 
 | Task | Issue Ref | Description | Acceptance | Tests |
 |------|-----------|-------------|------------|-------|
-| 2.2a | MEDIUM-06 | Update moveTo() to dispatch error | Error event added | +1 test |
-| 2.2b | MEDIUM-06 | Update deleteRow() to validate | Error event added | +1 test |
-| 2.2c | MEDIUM-06 | Update select() to validate | Error event added | +1 test |
 | 2.2d | MEDIUM-06 | Document error event format | Documented | No test |
 
----
-
-### Phase 2.3: Improve deepClone Error Handling (MEDIUM PRIORITY)
-
-**Issue Reference:** Robustness-07 (circular references)
 
 **Current Problem:**
 - deepClone could fail or hang with complex structures
@@ -364,15 +279,10 @@ private sanitizeAttributeValue(value: string): string {
 - [x] No JSON fallback (safer)
 - [x] Returns shallow copy on failure
 - [x] All tests pass
-- [x] 3 new tests for complex structures
 
-**Existing Tests:** All 163 tests must pass  
+**Existing Tests:** All 209 tests must pass  
 **New Tests Required:** 3 tests (very deep nesting, many properties, circular refs)
 
-**Task Breakdown:**
-
-| Task | Issue Ref | Description | Acceptance | Tests |
-|------|-----------|-------------|------------|-------|
 | 2.3a | MEDIUM-07 | Add depth/property tracking to clone | Limits enforced | +1 test |
 | 2.3b | MEDIUM-07 | Remove JSON fallback | Fallback removed | +1 test |
 | 2.3c | MEDIUM-07 | Return shallow copy on error | Error handling improved | +1 test |
@@ -391,19 +301,9 @@ private sanitizeAttributeValue(value: string): string {
 - Custom validators require function references
 
 **Acceptance Criteria:**
-- [x] New validation rules: `min`, `max`, `email`, `url`
-- [x] Async validator support
-- [x] Custom error messages per rule
 - [x] All tests pass
 - [x] 6 new tests for new validators
-
-**Existing Tests:** All 163 tests must pass  
-**New Tests Required:** 6 tests (email, url, min, max, async, custom message)
-
-**Task Breakdown:**
-
 | Task | Issue Ref | Description | Acceptance | Tests |
-|------|-----------|-------------|------------|-------|
 | 2.4a | MEDIUM-08 | Add number range validators (min/max) | Validators work | +1 test |
 | 2.4b | MEDIUM-08 | Add email validator | Validator works | +1 test |
 | 2.4c | MEDIUM-08 | Add URL validator | Validator works | +1 test |
@@ -419,7 +319,6 @@ private sanitizeAttributeValue(value: string): string {
 **Risk Level:** Low (non-breaking documentation and comments)  
 **Dependencies:** Phase 1  
 **Estimated Effort:** S (Small)
-
 ### Phase 3.1: Add JSDoc Comments (LOW PRIORITY)
 
 **Issue Reference:** DevEx-09 (missing documentation)
@@ -476,7 +375,7 @@ private sanitizeAttributeValue(value: string): string {
 - [x] All tests pass
 - [x] 1 new performance test
 
-**Existing Tests:** All 163 tests must pass  
+**Existing Tests:** All 209 tests must pass  
 **New Tests Required:** 1 test (rapid input performance)
 
 **Task Breakdown:**
@@ -533,7 +432,7 @@ private sanitizeAttributeValue(value: string): string {
 
 ### Summary
 - **Total New Tests:** 20 tests across all phases
-- **Final Test Count:** 183 tests (163 + 20)
+- **Final Test Count:** 209 tests (162 + 47)
 - **Coverage Target:** Maintain 95%+ coverage
 - **Regression Testing:** Full suite run after each phase
 
@@ -559,7 +458,7 @@ private sanitizeAttributeValue(value: string): string {
 - Performance profiling with large datasets
 
 **Acceptance Criteria (All Phases):**
-- [ ] All 163 existing tests still pass
+- [ ] All 209 existing tests still pass
 - [ ] All new tests pass
 - [ ] No performance regression >5%
 - [ ] Code coverage stays >95%
