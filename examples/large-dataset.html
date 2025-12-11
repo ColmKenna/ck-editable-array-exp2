@@ -15,7 +15,7 @@
     </header>
 
     <div class="card">
-      <div class="warning-box" style="background: #fef3c7; border-color: #f59e0b;">
+      <div class="warning-box warning-box--yellow">
         <strong>Performance:</strong> The component renders 100 rows in under 150ms and uses debounced validation (150ms) to avoid excessive processing during typing.
       </div>
 
@@ -41,7 +41,7 @@
         <template data-slot="display">
           <link rel="stylesheet" href="styles.css">
           <div class="row-item" style="padding: 0.5rem 1rem;">
-            <div style="width: 60px; color: #6b7280; font-size: 0.875rem;" data-bind="id"></div>
+            <div style="width: 60px; font-size: 0.875rem;" class="text-muted" data-bind="id"></div>
             <div class="grow">
               <div style="font-weight: 600;" data-bind="name"></div>
               <div class="text-sm text-muted" data-bind="email"></div>

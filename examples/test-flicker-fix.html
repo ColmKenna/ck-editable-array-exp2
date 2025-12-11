@@ -13,15 +13,15 @@
     }
     
     .test-info {
-      background: #e8f4f8;
-      border-left: 4px solid #2196F3;
+      background: var(--info-bg, #e8f4f8);
+      border-left: 4px solid var(--info-accent, #2196F3);
       padding: 1rem;
       margin-bottom: 2rem;
     }
-    
+
     .test-info h2 {
       margin-top: 0;
-      color: #1976D2;
+      color: var(--info-accent, #1976D2);
     }
     
     .test-info ul {
@@ -48,12 +48,12 @@
   <ck-editable-array name="people"></ck-editable-array>
 
   <template data-display-template>
-    <div class="display-item" style="display: flex; gap: 1rem; align-items: center; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 0.5rem; background: white;">
+    <div class="display-item">
       <span data-bind="name" style="flex: 1; font-weight: bold;"></span>
-      <span data-bind="email" style="flex: 1; color: #666;"></span>
+      <span data-bind="email" class="text-muted" style="flex: 1;"></span>
       <div style="display: flex; gap: 0.5rem;">
-        <button data-action="delete" style="padding: 0.25rem 0.75rem; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer;">Delete</button>
-        <button data-action="restore" style="padding: 0.25rem 0.75rem; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">Restore</button>
+        <button data-action="delete" class="demo-btn btn-danger">Delete</button>
+        <button data-action="restore" class="demo-btn btn-restore">Restore</button>
       </div>
     </div>
   </template>

@@ -365,7 +365,8 @@ ck-editable-array::part(row--deleted) .ck-row--deleted {
 
 /* Modal header styling */
 .ck-modal-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  /* Use a single solid color instead of a gradient for consistency */
+  background: #667eea;
   color: white;
   padding: 20px;
   border-radius: 8px 8px 0 0;
@@ -446,18 +447,48 @@ The component uses semantic CSS class names that follow BEM (Block Element Modif
 
 This makes it easy to override styles in your own CSS while maintaining consistency.
 
-### CSS Custom Properties (CSS Variables)
+### CSS Custom Properties (Theming)
 
-For future versions, consider using CSS custom properties for theming:
+The component exposes a small set of CSS custom properties to make theming simple and non-invasive. Default values are chosen to provide a clear, modern appearance, but you can override them in your application or on a per-page basis.
+
+Key properties:
 
 ```css
 :root {
-  --ck-primary-color: #2196F3;
-  --ck-error-color: #f44336;
-  --ck-success-color: #4caf50;
-  --ck-border-color: #ddd;
-  --ck-row-height: 48px;
-  --ck-modal-backdrop: rgba(0, 0, 0, 0.5);
+  /* Component background and text (neutral defaults) */
+  --ck-editable-array-bg: #ffffff; /* default component background */
+  --ck-editable-array-color: #111827; /* default component text color */
+
+  /* Visual: border, shadow, and radius */
+  --ck-editable-array-border: #e5e7eb;
+  --ck-editable-array-shadow: 0 4px 6px rgba(0, 0, 0, 0.06);
+  --ck-editable-array-radius: 8px;
+
+  /* Modal / edit panel */
+  --ck-editable-array-modal-backdrop: rgba(0, 0, 0, 0.5);
+  --ck-editable-array-edit-panel-bg: #f8fafc;
+}
+```
+
+Example: set a neutral / light theme for your examples or application:
+
+```css
+:root {
+  --ck-editable-array-bg: #ffffff;
+  --ck-editable-array-color: #111827;
+  --ck-editable-array-edit-panel-bg: #f8fafc;
+}
+```
+
+Example: switch to a dark theme variant:
+
+```css
+:root.theme-dark {
+  --ck-editable-array-bg: #111827;
+  --ck-editable-array-color: #f9fafb;
+  --ck-editable-array-edit-panel-bg: #0f172a;
+  --ck-editable-array-border: rgba(255,255,255,0.04);
+  --ck-editable-array-shadow: none;
 }
 ```
 

@@ -3,28 +3,34 @@ export const ckEditableArrayCSS = `
   display: block;
   padding: 1rem;
   font-family: Arial, sans-serif;
+  /* Do not set defaults here so host-level CSS variables can override. */
 }
 
 .ck-editable-array {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  /* Use a solid background color by default, exposed via a custom property so consumers
+     can style the component without overriding the full block. */
+  background: var(--ck-editable-array-bg, var(--card-bg, var(--bg-color, #ffffff)));
+  color: var(--ck-editable-array-color, var(--text-color, #111827));
   padding: 2rem;
-  border-radius: 8px;
+  border-radius: var(--ck-editable-array-radius);
   text-align: center;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s ease;
+  box-shadow: var(--ck-editable-array-shadow, 0 4px 6px rgba(0, 0, 0, 0.06));
+  border: 1px solid var(--ck-editable-array-border, var(--border, #e5e7eb));
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .ck-editable-array:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  /* by default we avoid moving the container on hover to prevent layout shift; 
+     use host CSS var to enable lift if desired: --ck-editable-array-hover-transform */
+  transform: var(--ck-editable-array-hover-transform, none);
+  box-shadow: var(--ck-editable-array-hover-box-shadow, 0 6px 12px rgba(0, 0, 0, 0.15));
 }
 
 .ck-editable-array__message {
   font-size: 1.5rem;
   margin: 0;
   /* per-instance color via CSS custom property */
-  color: var(--ck-editable-array-color, #333);
+  color: var(--ck-editable-array-color, var(--text-color, #333));
 }
 
 .ck-editable-array__subtitle {
@@ -40,7 +46,7 @@ export const ckEditableArrayCSS = `
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--ck-editable-array-modal-backdrop, rgba(0, 0, 0, 0.5));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -52,10 +58,10 @@ export const ckEditableArrayCSS = `
 }
 
 .ck-modal__content {
-  background: white;
-  color: black;
+  background: var(--ck-editable-array-edit-panel-bg, var(--edit-panel-bg, var(--card-bg, var(--bg-color, #f8fafc))));
+  color: var(--ck-editable-array-color, var(--text-color, #000));
   padding: 2rem;
-  border-radius: 8px;
+  border-radius: var(--ck-editable-array-radius);
   max-width: 90%;
   max-height: 90%;
   overflow: auto;

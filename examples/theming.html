@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Theming Demo - ck-editable-array</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .controls-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); gap: 0.75rem; }
+    .control { background: var(--card-bg); padding: 0.75rem; border-radius: 6px; border: 1px solid var(--border); }
+    .control label { display: block; font-size: 0.9rem; margin-bottom: 0.25rem; }
+    .presets { display:flex; gap:0.5rem; flex-wrap:wrap; }
+    .preset-btn { padding:0.4rem 0.6rem; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); cursor:pointer; }
+    .css-snippet { font-family: monospace; white-space: pre; background: var(--code-bg,#f3f4f6); padding:1rem; border-radius:6px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <a href="index.html" class="back-link">← Back to Examples</a>
+      <h1>Theming Demo</h1>
+      <p class="subtitle">Interactively tweak CSS variables used by the component and page. Changes apply live to the preview below.</p>
+    </header>
+
+    <div class="card">
+      <h2>Theme Presets</h2>
+      <div class="presets">
+        <button id="presetLight" class="preset-btn">Light (default)</button>
+        <button id="presetDark" class="preset-btn">Dark</button>
+        <button id="presetBlue" class="preset-btn">Blue Accent</button>
+      </div>
+
+      <h2 style="margin-top:1rem;">Controls</h2>
+      <div class="controls-grid">
+        <div class="control">
+          <label for="bg">Page background</label>
+          <input id="bg" type="color" value="#f9fafb">
+        </div>
+        <div class="control">
+          <label for="text">Page text</label>
+          <input id="text" type="color" value="#111827">
+        </div>
+        <div class="control">
+          <label for="card">Card background / component bg</label>
+          <input id="card" type="color" value="#ffffff">
+        </div>
+        <div class="control">
+          <label for="panel">Edit panel background</label>
+          <input id="panel" type="color" value="#f8fafc">
+        </div>
+        <div class="control">
+          <label for="primary">Primary / Accent</label>
+          <input id="primary" type="color" value="#2563eb">
+        </div>
+        <div class="control">
+          <label for="danger">Danger</label>
+          <input id="danger" type="color" value="#ef4444">
+        </div>
+      </div>
+
+      <div style="margin-top:1rem; display:flex; gap:0.75rem; align-items:center;">
+        <button id="applyBtn" class="demo-btn">Apply</button>
+        <button id="resetBtn" class="demo-btn btn-neutral">Reset</button>
+        <button id="copyBtn" class="demo-btn btn-secondary">Copy CSS</button>
+      </div>
+
+      <h3 style="margin-top:1rem;">Generated CSS</h3>
+      <div class="css-snippet" id="cssSnippet"></div>
+    </div>
+
+    <div class="card" style="margin-top:1rem;">
+      <h2>Live Preview</h2>
+      <div style="margin-bottom:1rem;">
+        <ck-editable-array id="preview" name="themingDemo"></ck-editable-array>
+      </div>
+      <div class="flex-row gap-2">
+        <button id="addRow" class="demo-btn">Add Row</button>
+        <button id="toggleTheme" class="demo-btn btn-neutral">Toggle Dark Theme</button>
+      </div>
+    </div>
+
+  </div>
+
+  <script type="module">
+    import '../dist/ck-editable-array/ck-editable-array.esm.js';
+
+    // Utilities
+    const root = document.documentElement;
+    const vars = {
+      '--bg-color': document.getElementById('bg').value,
+      '--text-color': document.getElementById('text').value,
+      '--card-bg': document.getElementById('card').value,
+      '--ck-editable-array-bg': document.getElementById('card').value,
+      '--ck-editable-array-color': document.getElementById('text').value,
+      '--ck-editable-array-edit-panel-bg': document.getElementById('panel').value,
+      '--primary': document.getElementById('primary').value,
+      '--danger': document.getElementById('danger').value
+    };
+
+    function applyVars(map) {
+      Object.entries(map).forEach(([k,v]) => root.style.setProperty(k, v));
+      updateSnippet();
+    }
+
+    function updateSnippet() {
+      const snippet = `:root {\n  --bg-color: ${get('--bg-color')};\n  --text-color: ${get('--text-color')};\n  --card-bg: ${get('--card-bg')};\n  --ck-editable-array-bg: ${get('--ck-editable-array-bg')};\n  --ck-editable-array-color: ${get('--ck-editable-array-color')};\n  --ck-editable-array-edit-panel-bg: ${get('--ck-editable-array-edit-panel-bg')};\n  --primary: ${get('--primary')};\n  --danger: ${get('--danger')};\n}`;
+      document.getElementById('cssSnippet').textContent = snippet;
+    }
+
+    function get(name) { return getComputedStyle(root).getPropertyValue(name).trim() || vars[name]; }
+
+    // Presets
+    document.getElementById('presetLight').addEventListener('click', () => {
+      const p = {
+        '--bg-color': '#f9fafb', '--text-color':'#111827', '--card-bg':'#ffffff', '--ck-editable-array-bg':'#ffffff', '--ck-editable-array-color':'#111827', '--ck-editable-array-edit-panel-bg':'#f8fafc','--edit-panel-bg':'#f8fafc','--primary':'#2563eb','--danger':'#ef4444'
+      };
+      applyVars(p);
+      setInputsFromVars();
+    });
+
+    document.getElementById('presetDark').addEventListener('click', () => {
+      const p = {
+        '--bg-color': '#0f172a', '--text-color':'#f9fafb', '--card-bg':'#0b1220', '--ck-editable-array-bg':'#0b1220', '--ck-editable-array-color':'#f9fafb', '--ck-editable-array-edit-panel-bg':'#0f172a','--edit-panel-bg':'#0f172a','--primary':'#60a5fa','--danger':'#fb7185'
+      };
+      applyVars(p);
+      setInputsFromVars();
+    });
+
+    document.getElementById('presetBlue').addEventListener('click', () => {
+      const p = {
+        '--bg-color': '#eef2ff', '--text-color':'#0f172a', '--card-bg':'#ffffff', '--ck-editable-array-bg':'#ffffff', '--ck-editable-array-color':'#0f172a', '--ck-editable-array-edit-panel-bg':'#eff6ff','--edit-panel-bg':'#eff6ff','--primary':'#4f46e5','--danger':'#ef4444'
+      };
+      applyVars(p);
+      setInputsFromVars();
+    });
+
+    function setInputsFromVars() {
+      document.getElementById('bg').value = get('--bg-color');
+      document.getElementById('text').value = get('--text-color');
+      document.getElementById('card').value = get('--card-bg');
+      document.getElementById('panel').value = get('--ck-editable-array-edit-panel-bg');
+      document.getElementById('primary').value = get('--primary');
+      document.getElementById('danger').value = get('--danger');
+    }
+
+    document.getElementById('applyBtn').addEventListener('click', () => {
+      const m = {
+        '--bg-color': document.getElementById('bg').value,
+        '--text-color': document.getElementById('text').value,
+        '--card-bg': document.getElementById('card').value,
+        '--ck-editable-array-bg': document.getElementById('card').value,
+        '--ck-editable-array-color': document.getElementById('text').value,
+        '--ck-editable-array-edit-panel-bg': document.getElementById('panel').value,
+        '--edit-panel-bg': document.getElementById('panel').value,
+        '--primary': document.getElementById('primary').value,
+        '--danger': document.getElementById('danger').value
+      };
+      applyVars(m);
+    });
+
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      document.getElementById('presetLight').click();
+    });
+
+    document.getElementById('copyBtn').addEventListener('click', async () => {
+      const text = document.getElementById('cssSnippet').textContent;
+      await navigator.clipboard.writeText(text);
+      alert('Copied CSS to clipboard');
+    });
+
+    document.getElementById('toggleTheme').addEventListener('click', () => {
+      document.documentElement.classList.toggle('theme-dark');
+    });
+
+    // Initialize preview component
+    const preview = document.getElementById('preview');
+    preview.data = [
+      { name: 'Alice', email: 'alice@example.com' },
+      { name: 'Bob', email: 'bob@example.com' }
+    ];
+
+    document.getElementById('addRow').addEventListener('click', () => preview.addRow());
+
+    // Initialize defaults
+    document.getElementById('presetLight').click();
+    setInputsFromVars();
+    updateSnippet();
+  </script>
+</body>
+</html>

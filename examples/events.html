@@ -15,7 +15,7 @@
     </header>
 
     <div class="card">
-      <div class="warning-box" style="background: #e0e7ff; border-color: #6366f1;">
+      <div class="warning-box warning-box--blue">
         <strong>Available Events:</strong>
         <ul style="margin: 0.5rem 0 0 0; padding-left: 1.5rem;">
           <li><code>datachanged</code> - Fired when data is added, modified, or deleted</li>
@@ -89,23 +89,23 @@
         </div>
       </div>
       <div id="eventLog" class="code-output" style="max-height: 400px; overflow-y: auto; font-family: 'Courier New', monospace; font-size: 0.875rem;">
-        <div style="color: #6b7280;">Waiting for events...</div>
+        <div class="text-muted">Waiting for events...</div>
       </div>
     </div>
 
     <div class="card">
       <h2>Event Statistics</h2>
       <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;">
-        <div style="text-align: center; padding: 1rem; background: #f3f4f6; border-radius: 0.5rem;">
-          <div style="font-size: 2rem; font-weight: bold; color: #2563eb;" id="dataChangedCount">0</div>
+        <div class="stat-card" style="text-align: center;">
+          <div class="stat-accent-blue" style="font-size: 2rem; font-weight: bold;" id="dataChangedCount">0</div>
           <div class="text-sm text-muted">datachanged</div>
         </div>
-        <div style="text-align: center; padding: 1rem; background: #f3f4f6; border-radius: 0.5rem;">
-          <div style="font-size: 2rem; font-weight: bold; color: #7c3aed;" id="beforeToggleCount">0</div>
+        <div class="stat-card" style="text-align: center;">
+          <div class="stat-accent-purple" style="font-size: 2rem; font-weight: bold;" id="beforeToggleCount">0</div>
           <div class="text-sm text-muted">beforetogglemode</div>
         </div>
-        <div style="text-align: center; padding: 1rem; background: #f3f4f6; border-radius: 0.5rem;">
-          <div style="font-size: 2rem; font-weight: bold; color: #059669;" id="afterToggleCount">0</div>
+        <div class="stat-card" style="text-align: center;">
+          <div class="stat-accent-green" style="font-size: 2rem; font-weight: bold;" id="afterToggleCount">0</div>
           <div class="text-sm text-muted">aftertogglemode</div>
         </div>
       </div>
@@ -202,7 +202,7 @@
 
     // Clear log
     clearLogBtn.addEventListener('click', () => {
-      eventLog.innerHTML = '<div style="color: #6b7280;">Waiting for events...</div>';
+      eventLog.innerHTML = '<div class="text-muted">Waiting for events...</div>';
       eventCounts = {
         datachanged: 0,
         beforetogglemode: 0,

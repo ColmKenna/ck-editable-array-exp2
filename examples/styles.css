@@ -6,6 +6,35 @@
   --primary-hover: #1d4ed8;
   --border: #e5e7eb;
   --font-main: 'Inter', system-ui, -apple-system, sans-serif;
+  /* Examples use the library's neutral defaults by default; dark theme overrides are available */
+}
+
+/* Semantic variables for example host pages (can be overridden per-page or in .theme-dark) */
+:root {
+  --success: #059669;
+  --danger: #ef4444;
+  --info-bg: #e8f4f8;
+  --info-accent: #2196F3;
+  --code-bg: #333;
+  --code-color: #0f0;
+  --stat-bg: #f3f4f6;
+}
+
+/* Optional dark theme for examples. Toggle by adding `.theme-dark` to the <html> element. */
+.theme-dark {
+  --bg-color: #0f172a;
+  --text-color: #f9fafb;
+  --card-bg: #0b1220;
+  --primary: #60a5fa;
+  --primary-hover: #3b82f6;
+  --border: rgba(255,255,255,0.06);
+
+  /* Component vars */
+  --ck-editable-array-bg: #0b1220;
+  --ck-editable-array-color: #f9fafb;
+  --ck-editable-array-edit-panel-bg: #0f172a;
+  --ck-editable-array-border: rgba(255,255,255,0.04);
+  --ck-editable-array-shadow: none;
 }
 
 body {
@@ -32,9 +61,8 @@ h1 {
   font-size: 2.5rem;
   font-weight: 800;
   margin: 0 0 0.5rem 0;
-  background: linear-gradient(135deg, #111827 0%, #4b5563 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  /* Use a solid color in the examples rather than a gradient fill */
+  color: var(--text-color);
 }
 
 .subtitle {
@@ -71,13 +99,13 @@ nav a {
   text-decoration: none;
   font-weight: 600;
   padding: 0.5rem 1rem;
-  background: #eff6ff;
+  background: var(--nav-bg, #eff6ff);
   border-radius: 0.375rem;
   transition: all 0.2s;
 }
 
 nav a:hover {
-  background: #dbeafe;
+  background: var(--nav-hover-bg, #dbeafe);
   color: var(--primary-hover);
 }
 
@@ -201,7 +229,7 @@ button.demo-btn:hover {
   border: 2px solid var(--primary);
   padding: 1rem;
   border-radius: 0.5rem;
-  background: #eff6ff;
+  background: var(--edit-panel-bg, var(--ck-editable-array-edit-panel-bg, var(--card-bg, #eff6ff)));
   box-sizing: border-box;
 }
 
@@ -237,23 +265,73 @@ button.demo-btn:hover {
   color: #6b7280;
 }
 
+.text-success { color: var(--success); }
+.text-primary { color: var(--primary); }
+.text-danger { color: var(--danger); }
+
 .code-output {
-  background: #f3f4f6;
+  background: var(--code-bg, #f3f4f6);
   padding: 1rem;
   border-radius: 0.5rem;
   overflow: auto;
   max-height: 300px;
   font-family: monospace;
+  color: var(--code-color, inherit);
 }
 
 .warning-box {
-  background: #fffbeb;
-  border: 1px solid #fcd34d;
+  /* Use CSS vars so callouts can be themed or adjusted per-page */
+  background: var(--warning-bg, #fffbeb);
+  border: 1px solid var(--warning-border, #fcd34d);
   border-radius: 0.5rem;
-  color: #92400e;
+  color: var(--warning-color, #92400e);
   padding: 1rem;
   margin-bottom: 1rem;
 }
+
+/* Callout modifiers for common accent colors used in examples */
+.warning-box--pink {
+  --warning-bg: #fce7f3;
+  --warning-border: #ec4899;
+}
+.warning-box--blue {
+  --warning-bg: #e0e7ff;
+  --warning-border: #6366f1;
+}
+.warning-box--yellow {
+  --warning-bg: #fef3c7;
+  --warning-border: #f59e0b;
+}
+
+/* Small utility styles used by examples */
+.test-info {
+  background: var(--info-bg, #e8f4f8);
+  border-left: 4px solid var(--info-accent, #2196F3);
+  padding: 1rem;
+  margin-bottom: 2rem;
+}
+
+.display-item {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  padding: 0.5rem;
+  border: 1px solid var(--border, #ddd);
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+  background: var(--card-bg, white);
+}
+
+.stat-card {
+  text-align: center;
+  padding: 1rem;
+  background: var(--stat-bg, #f3f4f6);
+  border-radius: 0.5rem;
+}
+
+.stat-accent-blue { color: var(--primary, #2563eb); }
+.stat-accent-purple { color: #7c3aed; }
+.stat-accent-green { color: #059669; }
 
 .avatar {
   width: 2rem;
@@ -395,3 +473,5 @@ select[aria-invalid="true"] {
 .gap-3 {
   gap: 0.75rem;
 }
+
+/* No gradient overrides needed; the component uses a solid background by default. */
