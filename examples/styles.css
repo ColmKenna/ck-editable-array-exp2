@@ -1,0 +1,397 @@
+:root {
+  --bg-color: #f9fafb;
+  --text-color: #111827;
+  --card-bg: #ffffff;
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --border: #e5e7eb;
+  --font-main: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+body {
+  font-family: var(--font-main);
+  background: var(--bg-color);
+  color: var(--text-color);
+  margin: 0;
+  padding: 2rem;
+  line-height: 1.6;
+}
+
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+header {
+  margin-bottom: 3rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 1.5rem;
+}
+
+h1 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin: 0 0 0.5rem 0;
+  background: linear-gradient(135deg, #111827 0%, #4b5563 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.subtitle {
+  color: #6b7280;
+  font-size: 1.1rem;
+}
+
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+h2 {
+  font-size: 1.5rem;
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  color: #374151;
+}
+
+nav ul {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+nav a {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  background: #eff6ff;
+  border-radius: 0.375rem;
+  transition: all 0.2s;
+}
+
+nav a:hover {
+  background: #dbeafe;
+  color: var(--primary-hover);
+}
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 2rem;
+  color: #6b7280;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.back-link:hover {
+  color: var(--text-color);
+}
+
+/* Demo specific */
+.demo-controls {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px dashed var(--border);
+}
+
+button.demo-btn {
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+button.demo-btn:hover {
+  background: var(--primary-hover);
+}
+
+/* --- Utilities --- */
+.flex-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+}
+
+.flex-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.flex-wrap {
+  flex-wrap: wrap;
+}
+
+.justify-end {
+  justify-content: flex-end;
+}
+
+.align-start {
+  align-items: flex-start;
+}
+
+.grow {
+  flex-grow: 1;
+}
+
+.w-full {
+  width: 100%;
+}
+
+.gap-2 {
+  gap: 0.5rem;
+}
+
+.gap-4 {
+  gap: 1rem;
+}
+
+.mb-2 {
+  margin-bottom: 0.5rem;
+}
+
+.mb-4 {
+  margin-bottom: 1rem;
+}
+
+.mt-2 {
+  margin-top: 0.5rem;
+}
+
+.p-2 {
+  padding: 0.5rem;
+}
+
+.p-4 {
+  padding: 1rem;
+}
+
+.border-b {
+  border-bottom: 1px solid #eee;
+}
+
+/* --- Components --- */
+.row-item {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  width: 100%;
+  padding: 0.5rem 0;
+}
+
+.row-item.bordered {
+  border-bottom: 1px solid #eee;
+}
+
+.edit-panel {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  width: 100%;
+  border: 2px solid var(--primary);
+  padding: 1rem;
+  border-radius: 0.5rem;
+  background: #eff6ff;
+  box-sizing: border-box;
+}
+
+.edit-panel.vertical {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.form-group {
+  margin-bottom: 0.5rem;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-weight: 500;
+}
+
+.form-input {
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.25rem;
+  width: 100%;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.text-sm {
+  font-size: 0.875rem;
+}
+
+.text-muted {
+  color: #6b7280;
+}
+
+.code-output {
+  background: #f3f4f6;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  overflow: auto;
+  max-height: 300px;
+  font-family: monospace;
+}
+
+.warning-box {
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  border-radius: 0.5rem;
+  color: #92400e;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.avatar {
+  width: 2rem;
+  height: 2rem;
+  background: #e5e7eb;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: #6b7280;
+  flex-shrink: 0;
+}
+
+/* --- Button Variants --- */
+.btn-secondary {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.btn-secondary:hover {
+  background: #d1d5db;
+}
+
+.btn-danger {
+  background: #ef4444;
+  color: white;
+}
+
+.btn-danger:hover {
+  background: #dc2626;
+}
+
+.btn-success {
+  background: #10b981;
+  color: white;
+}
+
+.btn-success:hover {
+  background: #059669;
+}
+
+.btn-neutral {
+  background: #9ca3af;
+  color: white;
+}
+
+.btn-neutral:hover {
+  background: #6b7280;
+}
+
+.btn-disabled {
+  opacity: 0.5;
+  cursor: not-allowed !important;
+  background: #9ca3af;
+}
+
+/* --- Validation Styles --- */
+input[aria-invalid="true"],
+select[aria-invalid="true"] {
+  border-color: #ef4444 !important;
+  background-color: #fef2f2;
+}
+
+[data-field-error] {
+  color: #ef4444;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+  display: block;
+}
+
+[data-row-invalid="true"] {
+  border-color: #ef4444 !important;
+}
+
+[data-error-summary] {
+  color: #ef4444;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  padding: 0.5rem;
+  background: #fef2f2;
+  border-radius: 0.25rem;
+  display: none;
+}
+
+[data-error-summary]:not(:empty) {
+  display: block;
+}
+
+/* --- Deleted Row Styles --- */
+
+.ck-deleted .row-item > *:not(.row-actions):not([data-action="restore"])  {
+  text-decoration: line-through;
+  color: #9ca3af;
+}
+
+/* Keep restore button readable when row is soft-deleted */
+.ck-deleted .row-item [data-action="restore"],
+.ck-deleted .row-item .btn-restore {
+  text-decoration: none;
+  opacity: 1;
+  color: #ffffff;
+}
+
+/* Hide delete button when row is deleted */
+.ck-deleted [data-action="delete"],
+.ck-deleted [data-action="toggle"] {
+  display: none;
+}
+
+/* Show restore button only when row is deleted */
+[data-action="restore"] {
+  display: none;
+}
+
+.ck-deleted [data-action="restore"] {
+  display: inline-block;
+}
+
+/* Restore button styling */
+.btn-restore {
+  background: #f59e0b;
+  color: white;
+}
+
+.btn-restore:hover {
+  background: #d97706;
+}
+
+/* --- Justify Between --- */
+.justify-between {
+  justify-content: space-between;
+}
+
+.mt-3 {
+  margin-top: 0.75rem;
+}
+
+.gap-3 {
+  gap: 0.75rem;
+}

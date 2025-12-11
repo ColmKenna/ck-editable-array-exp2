@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Large Dataset - ck-editable-array</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <a href="index.html" class="back-link">← Back to Examples</a>
+      <h1>Large Dataset Performance</h1>
+      <p class="subtitle">Handling 100+ rows efficiently with debounced validation.</p>
+    </header>
+
+    <div class="card">
+      <div class="warning-box" style="background: #fef3c7; border-color: #f59e0b;">
+        <strong>Performance:</strong> The component renders 100 rows in under 150ms and uses debounced validation (150ms) to avoid excessive processing during typing.
+      </div>
+
+      <div class="mb-4 flex-row gap-2 justify-between">
+        <div class="flex-row gap-2">
+          <button id="load50Btn" class="demo-btn btn-secondary">Load 50 Rows</button>
+          <button id="load100Btn" class="demo-btn btn-secondary">Load 100 Rows</button>
+          <button id="load500Btn" class="demo-btn btn-secondary">Load 500 Rows</button>
+        </div>
+        <button id="addBtn" class="demo-btn">Add Row</button>
+      </div>
+
+      <div class="mb-4 flex-row gap-4">
+        <div>
+          <strong>Rows:</strong> <span id="rowCount">0</span>
+        </div>
+        <div>
+          <strong>Last Render:</strong> <span id="renderTime">-</span>
+        </div>
+      </div>
+
+      <ck-editable-array id="largeList">
+        <template data-slot="display">
+          <link rel="stylesheet" href="styles.css">
+          <div class="row-item" style="padding: 0.5rem 1rem;">
+            <div style="width: 60px; color: #6b7280; font-size: 0.875rem;" data-bind="id"></div>
+            <div class="grow">
+              <div style="font-weight: 600;" data-bind="name"></div>
+              <div class="text-sm text-muted" data-bind="email"></div>
+            </div>
+            <div class="text-sm" style="width: 120px;" data-bind="department"></div>
+            <div class="flex-row gap-2" style="width: auto;">
+              <button data-action="toggle" class="demo-btn btn-secondary" style="padding: 0.25rem 0.75rem; font-size: 0.875rem;">Edit</button>
+              <button data-action="delete" class="demo-btn btn-danger" style="padding: 0.25rem 0.75rem; font-size: 0.875rem;">Delete</button>
+              <button data-action="restore" class="demo-btn btn-restore" style="padding: 0.25rem 0.75rem; font-size: 0.875rem;">Restore</button>
+            </div>
+          </div>
+        </template>
+
+        <template data-slot="edit">
+          <link rel="stylesheet" href="styles.css">
+          <div class="edit-panel">
+            <div class="grow flex-col gap-2">
+              <label style="font-size: 0.875rem;">
+                Name:
+                <input type="text" data-bind="name" class="form-input">
+                <span data-field-error="name"></span>
+              </label>
+              <label style="font-size: 0.875rem;">
+                Email:
+                <input type="email" data-bind="email" class="form-input">
+                <span data-field-error="email"></span>
+              </label>
+              <label style="font-size: 0.875rem;">
+                Department:
+                <select data-bind="department" class="form-input">
+                  <option value="">Select...</option>
+                  <option value="Engineering">Engineering</option>
+                  <option value="Sales">Sales</option>
+                  <option value="Marketing">Marketing</option>
+                  <option value="Support">Support</option>
+                  <option value="HR">HR</option>
+                </select>
+                <span data-field-error="department"></span>
+              </label>
+            </div>
+            <div class="flex-col gap-2">
+              <button data-action="save" class="demo-btn btn-success" style="padding: 0.25rem 0.75rem; font-size: 0.875rem;">Save</button>
+              <button data-action="cancel" class="demo-btn btn-neutral" style="padding: 0.25rem 0.75rem; font-size: 0.875rem;">Cancel</button>
+            </div>
+          </div>
+        </template>
+      </ck-editable-array>
+    </div>
+
+    <div class="card">
+      <h2>Performance Metrics</h2>
+      <div class="flex-col gap-2">
+        <div class="flex-row gap-2 justify-between">
+          <span>Initial Render Time:</span>
+          <strong id="initialRenderTime">-</strong>
+        </div>
+        <div class="flex-row gap-2 justify-between">
+          <span>Average Edit Toggle:</span>
+          <strong id="avgToggleTime">-</strong>
+        </div>
+        <div class="flex-row gap-2 justify-between">
+          <span>Data Changes:</span>
+          <strong id="changeCount">0</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import '../dist/ck-editable-array/ck-editable-array.esm.js';
+
+    const list = document.getElementById('largeList');
+    const load50Btn = document.getElementById('load50Btn');
+    const load100Btn = document.getElementById('load100Btn');
+    const load500Btn = document.getElementById('load500Btn');
+    const addBtn = document.getElementById('addBtn');
+    const rowCount = document.getElementById('rowCount');
+    const renderTime = document.getElementById('renderTime');
+    const initialRenderTime = document.getElementById('initialRenderTime');
+    const avgToggleTime = document.getElementById('avgToggleTime');
+    const changeCount = document.getElementById('changeCount');
+
+    let dataChangeCounter = 0;
+    let toggleTimes = [];
+
+    const departments = ['Engineering', 'Sales', 'Marketing', 'Support', 'HR'];
+    const firstNames = ['Alice', 'Bob', 'Charlie', 'Diana', 'Eve', 'Frank', 'Grace', 'Henry', 'Iris', 'Jack'];
+    const lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Martinez'];
+
+    // Generate fake data
+    function generateData(count) {
+      const data = [];
+      for (let i = 1; i <= count; i++) {
+        const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
+        const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
+        const department = departments[Math.floor(Math.random() * departments.length)];
+
+        data.push({
+          id: i,
+          name: `${firstName} ${lastName}`,
+          email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}${i}@company.com`,
+          department: department
+        });
+      }
+      return data;
+    }
+
+    // Load data with performance measurement
+    function loadData(count) {
+      const startTime = performance.now();
+      list.data = generateData(count);
+
+      // Use requestAnimationFrame to measure after render
+      requestAnimationFrame(() => {
+        const endTime = performance.now();
+        const duration = (endTime - startTime).toFixed(2);
+
+        rowCount.textContent = count;
+        renderTime.textContent = `${duration}ms`;
+        initialRenderTime.textContent = `${duration}ms`;
+
+        console.log(`Rendered ${count} rows in ${duration}ms`);
+      });
+    }
+
+    // Validation schema
+    list.validationSchema = {
+      name: {
+        required: true,
+        minLength: 3
+      },
+      email: {
+        required: true,
+        pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      },
+      department: {
+        required: true
+      }
+    };
+
+    // Factory for new items
+    list.newItemFactory = () => ({
+      id: list.data.length + 1,
+      name: '',
+      email: '',
+      department: ''
+    });
+
+    // Button handlers
+    load50Btn.addEventListener('click', () => loadData(50));
+    load100Btn.addEventListener('click', () => loadData(100));
+    load500Btn.addEventListener('click', () => loadData(500));
+
+    addBtn.addEventListener('click', () => {
+      list.addRow();
+      rowCount.textContent = list.data.length;
+    });
+
+    // Track data changes
+    list.addEventListener('datachanged', () => {
+      dataChangeCounter++;
+      changeCount.textContent = dataChangeCounter;
+    });
+
+    // Track toggle performance
+    list.addEventListener('beforetogglemode', () => {
+      list._toggleStartTime = performance.now();
+    });
+
+    list.addEventListener('aftertogglemode', () => {
+      if (list._toggleStartTime) {
+        const duration = performance.now() - list._toggleStartTime;
+        toggleTimes.push(duration);
+
+        // Keep last 10 measurements
+        if (toggleTimes.length > 10) {
+          toggleTimes.shift();
+        }
+
+        const avg = (toggleTimes.reduce((a, b) => a + b, 0) / toggleTimes.length).toFixed(2);
+        avgToggleTime.textContent = `${avg}ms`;
+      }
+    });
+
+    // Load initial data
+    loadData(50);
+  </script>
+</body>
+</html>

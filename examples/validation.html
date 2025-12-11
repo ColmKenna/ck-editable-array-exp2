@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Validation - ck-editable-array</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <a href="index.html" class="back-link">← Back to Examples</a>
+      <h1>Validation</h1>
+      <p class="subtitle">Schema-based validation with field and row-level feedback.</p>
+    </header>
+
+    <div class="card">
+      <div class="mb-4 flex-row justify-end">
+        <button id="addBtn" class="demo-btn">Add User</button>
+      </div>
+
+      <ck-editable-array id="validationList">
+        <template data-slot="display">
+          <link rel="stylesheet" href="styles.css">
+          <div class="row-item bordered">
+            <div class="grow">
+              <div><strong data-bind="username"></strong></div>
+              <div class="text-sm text-muted">Role: <span data-bind="role"></span></div>
+            </div>
+            <div class="flex-row gap-2" style="width: auto;">
+              <button data-action="toggle" class="demo-btn btn-secondary">Edit</button>
+              <button data-action="delete" class="demo-btn btn-danger">Delete</button>
+              <button data-action="restore" class="demo-btn btn-restore">Restore</button>
+            </div>
+          </div>
+        </template>
+
+        <template data-slot="edit">
+          <link rel="stylesheet" href="styles.css">
+          <div class="edit-panel vertical mb-4">
+            
+            <div data-error-summary></div>
+
+            <div class="w-full" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div>
+                <label class="form-label">Username *</label>
+                <input type="text" data-bind="username" placeholder="Min 3 chars" class="form-input">
+                <span data-field-error="username"></span>
+              </div>
+              
+              <div>
+                <label class="form-label">Role</label>
+                <select data-bind="role" class="form-input">
+                  <option value="">Select a role...</option>
+                  <option value="admin">Admin</option>
+                  <option value="editor">Editor</option>
+                  <option value="viewer">Viewer</option>
+                </select>
+                <span data-field-error="role"></span>
+              </div>
+            </div>
+
+            <div class="flex-row gap-2 justify-end mt-2">
+              <button data-action="cancel" class="demo-btn btn-neutral">Cancel</button>
+              <button data-action="save" class="demo-btn btn-success">Save Changes</button>
+            </div>
+          </div>
+        </template>
+      </ck-editable-array>
+    </div>
+  </div>
+
+  <script type="module">
+    import '../dist/ck-editable-array/ck-editable-array.esm.js';
+
+    const list = document.getElementById('validationList');
+    const addBtn = document.getElementById('addBtn');
+
+    // 1. Define Validation Schema
+    list.validationSchema = {
+      username: {
+        required: true,
+        minLength: 3,
+        pattern: /^[a-zA-Z0-9_]+$/ // Alphanumeric underscore only
+      },
+      role: {
+        required: true,
+        custom: (val) => ['admin', 'editor', 'viewer'].includes(val)
+      }
+    };
+
+    // 2. Factory
+    list.newItemFactory = () => ({
+      username: '',
+      role: ''
+    });
+
+    // 3. Initial Data
+    list.data = [
+      { username: 'admin_user', role: 'admin' }
+    ];
+
+    addBtn.addEventListener('click', () => list.addRow());
+  </script>
+</body>
+</html>

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Basic CRUD - ck-editable-array</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <a href="index.html" class="back-link">← Back to Examples</a>
+      <h1>Basic CRUD</h1>
+      <p class="subtitle">Add, edit, delete, and restore items.</p>
+    </header>
+
+    <div class="card">
+      <div class="mb-4 flex-row justify-end">
+        <button id="addBtn" class="demo-btn">Add Item</button>
+      </div>
+
+      <ck-editable-array id="myList">
+        <template data-slot="display">
+          <link rel="stylesheet" href="styles.css">
+          <div class="row-item">
+            <div class="grow">
+              <strong data-bind="name"></strong>
+              <span class="text-sm text-muted" style="margin-left: 0.5rem;" data-bind="email"></span>
+            </div>
+            <div class="flex-row gap-2" style="width: auto;">
+              <button data-action="toggle" class="demo-btn btn-secondary">Edit</button>
+              <button data-action="delete" class="demo-btn btn-danger">Delete</button>
+              <button data-action="restore" class="demo-btn btn-restore">Restore</button>
+            </div>
+          </div>
+        </template>
+
+        <template data-slot="edit">
+          <link rel="stylesheet" href="styles.css">
+          <div class="edit-panel">
+            <div class="grow flex-col">
+              <label>
+                Name:
+                <input type="text" data-bind="name" class="form-input">
+              </label>
+              <label>
+                Email:
+                <input type="email" data-bind="email" class="form-input">
+              </label>
+            </div>
+            <div class="flex-col">
+              <button data-action="save" class="demo-btn btn-success">Save</button>
+              <button data-action="cancel" class="demo-btn btn-neutral">Cancel</button>
+            </div>
+          </div>
+        </template>
+      </ck-editable-array>
+    </div>
+
+    <div class="card">
+      <h2>Component Data</h2>
+      <pre id="output" class="code-output">[]</pre>
+    </div>
+  </div>
+
+  <script type="module">
+    import '../dist/ck-editable-array/ck-editable-array.esm.js';
+
+    const list = document.getElementById('myList');
+    const addBtn = document.getElementById('addBtn');
+    const output = document.getElementById('output');
+
+    // Initial data
+    list.data = [
+      { name: 'Alice Smith', email: 'alice@example.com' },
+      { name: 'Bob Jones', email: 'bob@example.com' }
+    ];
+
+    // Factory for new items
+    list.newItemFactory = () => ({
+      name: '',
+      email: ''
+    });
+
+    // Handle add button
+    addBtn.addEventListener('click', () => {
+      list.addRow();
+    });
+
+    // Listen for data changes
+    list.addEventListener('datachanged', (e) => {
+      output.textContent = JSON.stringify(e.detail.data, null, 2);
+    });
+
+    // Listen for events to log
+    ['beforetogglemode', 'aftertogglemode'].forEach(evt => {
+      list.addEventListener(evt, (e) => {
+        console.log(`${evt}:`, e.detail);
+      });
+    });
+
+    // Initial output
+    output.textContent = JSON.stringify(list.data, null, 2);
+  </script>
+</body>
+</html>

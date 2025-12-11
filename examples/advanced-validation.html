@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Advanced Validation - ck-editable-array</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <a href="index.html" class="back-link">← Back to Examples</a>
+      <h1>Advanced Validation</h1>
+      <p class="subtitle">Custom validation rules, cross-field validation, and conditional requirements.</p>
+    </header>
+
+    <div class="card">
+      <div class="warning-box" style="background: #fce7f3; border-color: #ec4899;">
+        <strong>Validation Features:</strong>
+        <ul style="margin: 0.5rem 0 0 0; padding-left: 1.5rem;">
+          <li><code>required</code> - Field must have a value</li>
+          <li><code>minLength / maxLength</code> - String length constraints</li>
+          <li><code>pattern</code> - Regular expression validation</li>
+          <li><code>custom</code> - Custom validation function with access to entire row</li>
+        </ul>
+      </div>
+
+      <div class="mb-4 flex-row justify-end">
+        <button id="addBtn" class="demo-btn">Add User</button>
+      </div>
+
+      <ck-editable-array id="validationList" modal-edit>
+        <template data-slot="display">
+          <link rel="stylesheet" href="styles.css">
+          <div class="row-item">
+            <div style="width: 50px; text-align: center;">
+              <span style="font-size: 1.5rem;" data-bind="avatar"></span>
+            </div>
+            <div class="grow">
+              <div style="font-weight: 600;" data-bind="username"></div>
+              <div class="text-sm text-muted">
+                <span data-bind="email"></span> •
+                Age: <span data-bind="age"></span> •
+                Role: <span data-bind="role"></span>
+              </div>
+            </div>
+            <div class="flex-row gap-2" style="width: auto;">
+              <button data-action="toggle" class="demo-btn btn-secondary">Edit</button>
+              <button data-action="delete" class="demo-btn btn-danger">Delete</button>
+              <button data-action="restore" class="demo-btn btn-restore">Restore</button>
+            </div>
+          </div>
+        </template>
+
+        <template data-slot="edit">
+          <link rel="stylesheet" href="styles.css">
+          <div class="edit-panel vertical">
+            <h3 style="margin: 0 0 1rem 0;">User Information</h3>
+
+            <div data-error-summary></div>
+
+            <div class="flex-col gap-3">
+              <!-- Basic Info -->
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div>
+                  <label class="form-label">Username * (3-20 chars, alphanumeric)</label>
+                  <input type="text" data-bind="username" placeholder="john_doe123" class="form-input">
+                  <span data-field-error="username"></span>
+                </div>
+
+                <div>
+                  <label class="form-label">Avatar Emoji *</label>
+                  <input type="text" data-bind="avatar" placeholder="👤" class="form-input" style="font-size: 1.5rem;">
+                  <span data-field-error="avatar"></span>
+                </div>
+              </div>
+
+              <!-- Email -->
+              <div>
+                <label class="form-label">Email * (must be valid format)</label>
+                <input type="email" data-bind="email" placeholder="user@example.com" class="form-input">
+                <span data-field-error="email"></span>
+              </div>
+
+              <!-- Age and Role with conditional validation -->
+              <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 1rem;">
+                <div>
+                  <label class="form-label">Age * (18-120)</label>
+                  <input type="number" data-bind="age" placeholder="25" min="18" max="120" class="form-input">
+                  <span data-field-error="age"></span>
+                </div>
+
+                <div>
+                  <label class="form-label">Role * (admin requires age ≥ 21)</label>
+                  <select data-bind="role" class="form-input">
+                    <option value="">Select role...</option>
+                    <option value="admin">Admin (requires age ≥ 21)</option>
+                    <option value="moderator">Moderator</option>
+                    <option value="user">User</option>
+                  </select>
+                  <span data-field-error="role"></span>
+                </div>
+              </div>
+
+              <!-- Password with confirmation -->
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div>
+                  <label class="form-label">Password (8-50 chars, letter + number)</label>
+                  <input type="password" data-bind="password" placeholder="Enter password" class="form-input">
+                  <span data-field-error="password"></span>
+                </div>
+
+                <div>
+                  <label class="form-label">Confirm Password (must match)</label>
+                  <input type="password" data-bind="passwordConfirm" placeholder="Confirm password" class="form-input">
+                  <span data-field-error="passwordConfirm"></span>
+                </div>
+              </div>
+
+              <!-- Bio with character limit -->
+              <div>
+                <label class="form-label">Bio (max 200 chars)</label>
+                <textarea data-bind="bio" placeholder="Tell us about yourself..." class="form-input" rows="3"></textarea>
+                <span data-field-error="bio"></span>
+              </div>
+            </div>
+
+            <div class="flex-row gap-2 justify-end mt-3">
+              <button data-action="cancel" class="demo-btn btn-neutral">Cancel</button>
+              <button data-action="save" class="demo-btn btn-success">Save User</button>
+            </div>
+          </div>
+        </template>
+      </ck-editable-array>
+    </div>
+
+    <div class="card">
+      <h2>Validation Rules Explained</h2>
+      <div class="flex-col gap-2" style="font-size: 0.875rem;">
+        <div><strong>Username:</strong> 3-20 characters, alphanumeric with underscores</div>
+        <div><strong>Avatar:</strong> Required, must be a single emoji character</div>
+        <div><strong>Email:</strong> Must match standard email format</div>
+        <div><strong>Age:</strong> Number between 18 and 120</div>
+        <div><strong>Role:</strong> Required; Admin role requires age ≥ 21 (cross-field validation)</div>
+        <div><strong>Password:</strong> 8-50 characters with at least one letter and one number</div>
+        <div><strong>Password Confirm:</strong> Must match password field (cross-field validation)</div>
+        <div><strong>Bio:</strong> Optional, max 200 characters</div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import '../dist/ck-editable-array/ck-editable-array.esm.js';
+
+    const list = document.getElementById('validationList');
+    const addBtn = document.getElementById('addBtn');
+
+    // Define advanced validation schema
+    list.validationSchema = {
+      username: {
+        required: true,
+        minLength: 3,
+        maxLength: 20,
+        pattern: /^[a-zA-Z0-9_]+$/
+      },
+      avatar: {
+        required: true,
+        custom: (val) => {
+          // Check if it's a single emoji (simple check)
+          const str = String(val).trim();
+          return str.length >= 1 && str.length <= 4; // Emoji can be 1-4 chars
+        }
+      },
+      email: {
+        required: true,
+        pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      },
+      age: {
+        required: true,
+        custom: (val) => {
+          const num = parseInt(val, 10);
+          return !isNaN(num) && num >= 18 && num <= 120;
+        }
+      },
+      role: {
+        required: true,
+        custom: (val, row) => {
+          // Cross-field validation: Admin requires age >= 21
+          if (val === 'admin') {
+            const age = parseInt(row.age, 10);
+            return !isNaN(age) && age >= 21;
+          }
+          return ['admin', 'moderator', 'user'].includes(val);
+        }
+      },
+      password: {
+        minLength: 8,
+        maxLength: 50,
+        custom: (val) => {
+          if (!val) return true; // Optional field
+          const str = String(val);
+          // Must contain at least one letter and one number
+          return /[a-zA-Z]/.test(str) && /[0-9]/.test(str);
+        }
+      },
+      passwordConfirm: {
+        custom: (val, row) => {
+          // Cross-field validation: Must match password
+          if (!row.password) return true; // If no password set, confirmation not needed
+          return val === row.password;
+        }
+      },
+      bio: {
+        maxLength: 200
+      }
+    };
+
+    // Factory for new items
+    list.newItemFactory = () => ({
+      username: '',
+      avatar: '👤',
+      email: '',
+      age: '',
+      role: '',
+      password: '',
+      passwordConfirm: '',
+      bio: ''
+    });
+
+    // Initial data with valid users
+    list.data = [
+      {
+        username: 'alice_admin',
+        avatar: '👩‍💼',
+        email: 'alice@example.com',
+        age: '28',
+        role: 'admin',
+        password: 'Pass1234',
+        passwordConfirm: 'Pass1234',
+        bio: 'System administrator with 5 years of experience.'
+      },
+      {
+        username: 'bob_mod',
+        avatar: '👨‍💻',
+        email: 'bob@example.com',
+        age: '22',
+        role: 'moderator',
+        password: 'Secure99',
+        passwordConfirm: 'Secure99',
+        bio: 'Community moderator and content reviewer.'
+      },
+      {
+        username: 'charlie_user',
+        avatar: '🧑',
+        email: 'charlie@example.com',
+        age: '19',
+        role: 'user',
+        password: 'MyPass123',
+        passwordConfirm: 'MyPass123',
+        bio: 'Regular user, enjoying the platform!'
+      }
+    ];
+
+    // Handle add button
+    addBtn.addEventListener('click', () => {
+      list.addRow();
+    });
+
+    // Log validation errors to console
+    list.addEventListener('datachanged', (e) => {
+      console.log('Data updated:', e.detail.data);
+    });
+  </script>
+</body>
+</html>

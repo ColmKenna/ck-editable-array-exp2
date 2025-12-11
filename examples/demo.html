@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CkEditableArray - CRUD Demo</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 800px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+      background: #f5f5f5;
+    }
+    h1 {
+      color: #333;
+    }
+    .controls {
+      margin-bottom: 1rem;
+      padding: 1rem;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .controls button {
+      padding: 0.5rem 1rem;
+      margin-right: 0.5rem;
+      cursor: pointer;
+      background: #4a90d9;
+      color: white;
+      border: none;
+      border-radius: 4px;
+    }
+    .controls button:hover {
+      background: #357abd;
+    }
+    ck-editable-array {
+      display: block;
+      background: white;
+      padding: 1rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    /* Row styles */
+    .row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.75rem;
+      border-bottom: 1px solid #eee;
+    }
+    .row:last-child {
+      border-bottom: none;
+    }
+    .row.ck-deleted {
+      opacity: 0.5;
+      text-decoration: line-through;
+      background: #fee;
+    }
+    .row span {
+      flex: 1;
+    }
+    .row input {
+      flex: 1;
+      padding: 0.5rem;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    .row button {
+      padding: 0.25rem 0.75rem;
+      cursor: pointer;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background: white;
+    }
+    .row button:hover {
+      background: #f0f0f0;
+    }
+    .row button[data-action="delete"] {
+      color: #d33;
+      border-color: #d33;
+    }
+    .row button[data-action="restore"] {
+      color: #393;
+      border-color: #393;
+    }
+    .row button[data-action="save"] {
+      color: #393;
+      border-color: #393;
+    }
+    .row button[data-action="cancel"] {
+      color: #666;
+    }
+    #output {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: #333;
+      color: #0f0;
+      font-family: monospace;
+      border-radius: 8px;
+      white-space: pre-wrap;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>CkEditableArray - CRUD Demo</h1>
+
+  <div class="controls">
+    <button id="addBtn">Add Contact</button>
+    <button id="toggleReadonly">Toggle Readonly</button>
+    <button id="getData">Log Data</button>
+  </div>
+
+  <ck-editable-array name="contacts">
+    <!-- Display template -->
+    <template data-slot="display">
+      <div class="row">
+        <span data-bind="name"></span>
+        <span data-bind="email"></span>
+        <button data-action="toggle">Edit</button>
+        <button data-action="delete">Delete</button>
+        <button data-action="restore">Restore</button>
+      </div>
+    </template>
+
+    <!-- Edit template -->
+    <template data-slot="edit">
+      <div class="row">
+        <input data-bind="name" type="text" placeholder="Name" />
+        <input data-bind="email" type="email" placeholder="Email" />
+        <button data-action="save">Save</button>
+        <button data-action="cancel">Cancel</button>
+      </div>
+    </template>
+  </ck-editable-array>
+
+  <div id="output">Events will appear here...</div>
+
+  <!-- Load the component -->
+  <script type="module">
+    import { CkEditableArray } from '../dist/ck-editable-array/ck-editable-array.esm.js';
+
+    const el = document.querySelector('ck-editable-array');
+    const output = document.getElementById('output');
+
+    function log(message) {
+      const time = new Date().toLocaleTimeString();
+      output.textContent = `[${time}] ${message}\n` + output.textContent;
+    }
+
+    // Set initial data
+    el.data = [
+      { name: 'Alice Johnson', email: 'alice@example.com' },
+      { name: 'Bob Smith', email: 'bob@example.com' },
+      { name: 'Charlie Brown', email: 'charlie@example.com' }
+    ];
+
+    // Set custom factory for new items
+    el.newItemFactory = () => ({
+      name: '',
+      email: ''
+    });
+
+    // Set validation schema
+    el.validationSchema = {
+      name: { required: true, minLength: 2 },
+      email: { required: true }
+    };
+
+    // Event listeners
+    el.addEventListener('datachanged', (e) => {
+      log(`datachanged: ${JSON.stringify(e.detail.data, null, 2)}`);
+    });
+
+    el.addEventListener('beforetogglemode', (e) => {
+      log(`beforetogglemode: row ${e.detail.index}, editing: ${e.detail.editing}`);
+    });
+
+    el.addEventListener('aftertogglemode', (e) => {
+      log(`aftertogglemode: row ${e.detail.index}, editing: ${e.detail.editing}`);
+    });
+
+    // Control buttons
+    document.getElementById('addBtn').addEventListener('click', () => {
+      el.addRow();
+      log('addRow() called');
+    });
+
+    document.getElementById('toggleReadonly').addEventListener('click', () => {
+      el.readonly = !el.readonly;
+      log(`readonly: ${el.readonly}`);
+    });
+
+    document.getElementById('getData').addEventListener('click', () => {
+      log(`Current data: ${JSON.stringify(el.data, null, 2)}`);
+    });
+
+    log('Component initialized with 3 contacts');
+  </script>
+</body>
+</html>
