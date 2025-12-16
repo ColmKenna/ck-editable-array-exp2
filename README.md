@@ -1,4 +1,10 @@
+# Experiment with how much the ai agents can get you
+
+Mostly did this with various ai agents and spec and prompts.
+Gets messy after a while if you aren't in the loop and letting it generate too much without keeping track and writing enough of it yourself to at least not get too lost in it and stop of from doing some silly stuff.
+
 # Web Component Library
+
 
 A modern web component library built with TypeScript and Rollup, designed to be lightweight, reusable, and easy to integrate into any web project. Published to GitHub Packages for easy distribution and version management.
 
